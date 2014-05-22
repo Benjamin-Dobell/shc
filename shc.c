@@ -7,7 +7,7 @@
  * The copyright notice does not apply to that code.
  */
 static const char my_name[] = "shc";
-static const char version[] = "Version 3.8.3";
+static const char version[] = "Version 3.8.5";
 static const char subject[] = "Generic Script Compiler";
 static const char cpright[] = "Copyright (c) 1994-2005";
 static const struct { const char * f, * s, * e; }
@@ -95,7 +95,7 @@ static const char * help[] = {
 #define SIZE 4096
 
 static char * file;
-static double date[1];
+static time_t date[1];
 static char * mail = "Please contact your provider";
 static char   rlax[1];
 static char * shll;
@@ -211,10 +211,10 @@ static const char * RTC[] = {
 "}",
 "",
 "#if DEBUGEXEC",
-"void debugexec(char * shll, int argc, char ** argv)",
+"void debugexec(char * sh11, int argc, char ** argv)",
 "{",
 "	int i;",
-"	fprintf(stderr, \"shll=%s\\n\", shll ? shll : \"<null>\");",
+"	fprintf(stderr, \"shll=%s\\n\", sh11 ? sh11 : \"<null>\");",
 "	fprintf(stderr, \"argc=%d\\n\", argc);",
 "	if (!argv) {",
 "		fprintf(stderr, \"argv=<null>\\n\");",
@@ -274,6 +274,10 @@ static const char * RTC[] = {
 "#include <stdio.h>",
 "#include <unistd.h>",
 "",
+"#if !defined(PTRACE_ATTACH) && defined(PT_ATTACH)",
+"#	define PTRACE_ATTACH	PT_ATTACH",
+"#endif",
+
 "void untraceable(char * argv0)",
 "{",
 "	char proc[80];",
@@ -283,7 +287,11 @@ static const char * RTC[] = {
 "	case  0:",
 "		pid = getppid();",
 "		/* For problematic SunOS ptrace */",
-"		sprintf(proc, \"/proc/%d/as\", (int)pid);",
+"#if defined(__FreeBSD__)",
+"		sprintf(proc, \"/proc/%d/mem\", (int)pid);",
+"#else",
+"		sprintf(proc, \"/proc/%d/as\",  (int)pid);",
+"#endif",
 "		close(0);",
 "		mine = !open(proc, O_RDWR|O_EXCL);",
 "		if (!mine && errno != EBUSY)",
@@ -889,7 +897,7 @@ int write_C(char * file, char * argv[])
 			switch (indx) {
 			case  0: if (pswd_z>=0) {prnt_array(o, pswd, "pswd", pswd_z, 0); pswd_z=done=-1; break;}
 			case  1: if (msg1_z>=0) {prnt_array(o, msg1, "msg1", msg1_z, 0); msg1_z=done=-1; break;}
-			case  2: if (date_z>=0) {prnt_array(o, date, "date", date_z, "(double*)"); date_z=done=-1; break;}
+			case  2: if (date_z>=0) {prnt_array(o, date, "date", date_z, "(time_t*)"); date_z=done=-1; break;}
 			case  3: if (shll_z>=0) {prnt_array(o, shll, "shll", shll_z, 0); shll_z=done=-1; break;}
 			case  4: if (inlo_z>=0) {prnt_array(o, inlo, "inlo", inlo_z, 0); inlo_z=done=-1; break;}
 			case  5: if (xecc_z>=0) {prnt_array(o, xecc, "xecc", xecc_z, 0); xecc_z=done=-1; break;}

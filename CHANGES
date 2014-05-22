@@ -1,9 +1,24 @@
 CHANGES
 
+3.8.5	Fri Oct 21 13:11:36 CEST 2005
+
+	Thanks to Jukka A. Ukkonen <jau(a)iki.fi> for:
+	- Fixed untraceable() problems on FreeBSD.
+
+
+
+3.8.4	Tue Oct  4 16:52:15 CEST 2005
+
+	Thanks to Ron McOuat for:
+	- Fixed sma11 -d option bug.
+
+
+
 3.8.3	Tue Jun 28 21:29:06 CEST 2005
 
 	Thanks to Jacek Kalinski <jacek@dyski.one.pl> for:
 	- Fixed bug: "vfork" fails on multiprocessor systems.
+
 
 
 3.8.2	Thu Jun 16 17:15:59 CEST 2005
