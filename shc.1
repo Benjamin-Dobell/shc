@@ -1,0 +1,91 @@
+.TH  shc 1  "Nov 20, 1991" "shc Version 2.4"
+.UC 4
+
+.SH NAME
+shc - Generic shell script compiler
+.SH SYNOPSIS
+.B shc
+[ \-\fBe\fP date ] 
+[ \-\fBm\fP addr ]
+[ \-\fBi\fP iopt ] 
+[ \-\fBx\fP cmnd ] 
+.br
+[ \-\fBl\fP lopt ] 
+[ \-\fBvCAh\fP ]
+\-\fBf\fP script
+.SH DESCRIPTION
+.B shc
+obtains a stripped binary executable version of the script
+specified at command line.
+
+Binary version will be named with \fI.x\fP
+extension, and will usually be shorter than ascii one.
+
+If you specify an expiration date with \fI\-e\fP,
+binary will refuse to be executed later.
+If you specify an email contact direction with \fI\-m\fP
+a message will be displayed saying \fBContact with me@myhost.mydomain\fP.
+
+You can compile whatever interpreted script, but you must supply valid
+\fI\-i\fP, \fI\-x\fP and \fI\-l\fP options.
+
+If you look it closer you will find that \fBshc\fP really not makes an
+independent executable because it remains needing /bin/sh.
+It performs compression and random sort of the script, and on execution
+uncompress and sh'xcutes itself with the \fI-c\fP option adding the date
+expire capability.
+
+Perhaps you think it is not a compiler, but it "compiles" a script,
+and it behaves exactly like the original script.
+Unfortunatelly it will not give you any speed improvement
+(perhaps a smaller size).
+
+Its main utility is to protect your sh scripts from modification or 
+inspection.
+You can use it if you wish to distribute your scripts but not 
+wants to be readable.
+Of course it is not absolutelly safe but it will.
+.SH OPTIONS
+The command line options are:
+.TP
+.B -e date
+Expiration date in mm/dd/yy format [NO]
+.TP
+.B -m email_dir
+e-Mail address to contact with at expiration [your provider]
+.TP
+.B -f script_name
+File name of the script to compile
+.TP
+.B -i inline_option
+Inline option for this interpreter i.e: -e
+.TP
+.B -x comand
+eXec command, as a printf format i.e: exec(\\\\'%s\\\\',@ARGV);
+.TP
+.B -l last_option
+Last option i.e: --
+.TP
+.B -v   
+Verbose
+.TP
+.B -C   
+Copying
+.TP
+.B -A   
+Abstract
+.TP
+.B -h   
+Help
+.SH BUGS
+The maximum size of the script that could be compiled is limited
+by the operating system configuration parameter
+.B _SC_ARG_MAX
+(see
+.BR sysconf ( 2 )\c
+)
+.SH AUTHOR
+Francisco Rosales
+<frosal@fi.upm.es>
+.SH REPORT BUGS TO
+the author.
