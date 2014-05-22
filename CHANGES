@@ -1,5 +1,17 @@
 CHANGES
 
+3.7	Wed Jun 18 16:32:26 CEST 2003
+
+	Thanks to Philipp Koller <philipp@open.ch> for:
+	- Removed all strings in the compiled script.
+	- Improved program output and error messages.
+	- The -m option allows to define the *complete* expiration message.
+	- Updated manpage shc.1.
+
+	Thanks to Bryan <bryan.hogan@dstintl.com> for:
+	- Fix wrong $0 on ksh.
+
+
 
 3.6	Fri Feb 21 09:40:32 CET 2003
 

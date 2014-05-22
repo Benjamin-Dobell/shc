@@ -1,6 +1,8 @@
 # Makefile
 #
 
+INSTALL_PATH = /usr/local
+
 # For SCO
 CFLAGS = -b elf -O -D_SVID
 
@@ -17,30 +19,57 @@ CFLAGS = -Wall -O -Ae
 CFLAGS = -w -verbose -fast -std1 -g0
 
 # For GNU C compiler
-CFLAGS = -Wall -O6 -s -pedantic
+CFLAGS = -Wall -O6 -pedantic
 
 SHELL = /bin/sh
 
-all: shc test
+all: shc ask_for_test
 
-test: match.x
-	@echo '***' Running $<
+shc: shc.c
+	$(CC) $(CFLAGS) $< -o $@
+
+ask_for_test:
+	@echo '***	¿Do you want to probe shc with a test script?'
+	@echo '***	Please try...	make test'
+
+test: make_the_test ask_for_strings
+
+make_the_test: match.x
+	@echo '***	Running a compiled test script!'
+	@echo '***	It must show files with substring "sh" in your PATH...'
 	./match.x sh
-	@echo '***' Please try...	strings -n 7 $< \| more
 
 match.x: match.x.c
+	$(CC) $(CFLAGS) $< -o $@
 
-match.x.c: match
-	@echo '***' Compiling script match
+match.x.c: shc match
+	@echo '***	Compiling script "match"'
 	CFLAGS="$(CFLAGS)" ./shc -v -r -f match
+
+ask_for_strings:
+	@echo '***	¿Do you want to see strings in the generated binary?'
+	@echo '***	Please try...	make strings'
+
+strings: make_the_strings ask_for_install
+
+make_the_strings: match.x
+	@echo '***	Running: "strings -n 5 '$<'"'
+	@echo '***	It must show no sensible information...'
+	strings -n 5 $<
+
+ask_for_install:
+	@echo '***	¿Do you want to install shc?'
+	@echo '***	Please try...	make install'
+
+install: shc
+	@echo '***	Installing shc and shc.1 on '$(INSTALL_PATH)
+	@echo -n '***	¿Do you want to continue? '; read ANS; case "$$ANS" in y|Y|yes|Yes|YES) ;; *) exit 1;; esac;
+	install -c -s shc $(INSTALL_PATH)/bin/
+	install -c -m 644 shc.1 $(INSTALL_PATH)/man/man1/
 
 clean:
 	rm -f *.o *~ *.x.c
 
 cleanall: clean
 	rm -f shc *.x
-
-install:
-	install -c -s shc /usr/local/bin/
-	install -c -m 644 shc.1 /usr/local/man/man1/
 

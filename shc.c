@@ -7,9 +7,9 @@
  * The copyright notice does not apply to that code.
  */
 static const char my_name[] = "shc";
-static const char version[] = "Version 3.6";
+static const char version[] = "Version 3.7";
 static const char subject[] = "Generic Script Compiler";
-static const char cpright[] = "Copyright (c) 1994..2003...";
+static const char cpright[] = "Copyright (c) 1994-2003";
 static const struct { const char * f, * s, * e; }
 	author = { "Francisco", "Rosales", "<frosal@fi.upm.es>" };
 
@@ -40,44 +40,48 @@ static const char * abstract[] = {
 "    This tool generates a stripped binary executable version",
 "    of the script specified at command line.",
 "",
-"    Binary version will be named with .x extension.",
+"    Binary version will be saved with a .x extension.",
 "",
 "    You can specify expiration date [-e] too, after which binary will",
-"    refuse to be executed, displaying \"Contact with [-m]\" instead.",
+"    refuse to be executed, displaying \"[-m]\" instead.",
 "",
 "    You can compile whatever interpreted script, but valid [-i], [-x]",
 "    and [-l] options must be given.",
 "",
 0};
 
-static const char usage[] =
-"Usage: -f script [-e date] [-m addr] [-i iopt] [-x cmnd] [-l lopt] [-rvDTCAh]";
+static const char usage[] = 
+"Usage: shc [-e date] [-m addr] [-i iopt] [-x cmnd] [-l lopt] [-rvDTCAh] -f script";
 
 static const char * help[] = {
-"    -e %s  Expiration date in dd/mm/yyyy format [NO]",
-"    -m %s  e-Mail address to contact with at expiration [your provider]",
-"    -f %s  File name of the script to compile",
-"    -i %s  Inline option for this interpreter i.e: -e",
-"    -x %s  eXec command, as a printf format i.e: exec('%s',@ARGV);",
-"    -l %s  Last option i.e: --",
-"    -r     force Relaxed security. Make a redistributable binary",
-"    -v     Verbose",
-"    -D     switch ON Debug exec calls [OFF]",
-"    -T     switch ON Traceable binary [OFF]",
-"    -C     Copying",
-"    -A     Abstract",
-"    -h     Help",
 "",
-"       Environment variables used:",
-"       Name    Default Usage",
-"       CC      cc      C language compiler",
-"       CFLAGS  <none>  Flags for C compiler",
+"    -e %s  Expiration date in dd/mm/yyyy format [none]",
+"    -m %s  Message to display upon expiration [\"Please contact your provider\"]",
+"    -f %s  File name of the script to compile",
+"    -i %s  Inline option for the shell interpreter i.e: -e",
+"    -x %s  eXec command, as a printf format i.e: exec('%s',@ARGV);",
+"    -l %s  Last shell option i.e: --",
+"    -r     Relax security. Make a redistributable binary",
+"    -v     Verbose compilation",
+"    -D     Switch ON debug exec calls [OFF]",
+"    -T     Allow binary to be traceable [no]",
+"    -C     Display license and exit",
+"    -A     Display abstract and exit",
+"    -h     Display help and exit",
+"",
+"    Environment variables used:",
+"    Name    Default  Usage",
+"    CC      cc       C compiler command",
+"    CFLAGS  <none>   C compiler flags",
+"",
+"    Please consult the shc(1) man page.",
 "",
 0};
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -92,7 +96,7 @@ static const char * help[] = {
 
 static char * file;
 static long date;
-static char * mail = "your provider";
+static char * mail = "Please contact your provider";
 static int relax;
 static char * shll;
 static char * inlo;
@@ -102,10 +106,10 @@ static char * opts;
 static char * text;
 static int verbose;
 static const char DEBUGEXEC_line[] =
-"#define DEBUGEXEC	%d	/* Define if you want to debug execvp calls */\n";
+"#define DEBUGEXEC	%d	/* Define as 1 to debug execvp calls */\n";
 static int DEBUGEXEC_flag;
 static const char TRACEABLE_line[] =
-"#define TRACEABLE	%d	/* Define to enable ptrace this executable */\n";
+"#define TRACEABLE	%d	/* Define as 1 to enable ptrace the executable */\n";
 static int TRACEABLE_flag;
 static const char * RTC[] = {
 "",
@@ -287,7 +291,7 @@ static const char * RTC[] = {
 "		if (mine) {",
 "			kill(pid, SIGCONT);",
 "		} else {",
-"			fprintf(stderr, \"%s: Being traced!\\n\", argv0);",
+"			fprintf(stderr, \"%s is being traced!\\n\", argv0);",
 "			kill(pid, SIGKILL);",
 "		}",
 "		_exit(mine);",
@@ -317,10 +321,10 @@ static const char * RTC[] = {
 "	rc4(lsto, sizeof(lsto_t));",
 "	rc4(chk1, sizeof(chk1_t));",
 "	if (strcmp(TEXT_chk1, chk1))",
-"		return \"I have changed!\";",
+"		return \"location has changed!\";",
 "	ret = chkenv(argc);",
 "	if (ret < 0)",
-"		return \"Unnormal behavior!\";",
+"		return \"abnormal behavior!\";",
 "	varg = (char **)calloc(argc + 10, sizeof(char *));",
 "	if (!varg)",
 "		return 0;",
@@ -331,7 +335,7 @@ static const char * RTC[] = {
 "		rc4(text, sizeof(text_t));",
 "		rc4(chk2, sizeof(chk2_t));",
 "		if (strcmp(TEXT_chk2, chk2))",
-"			return \"Shell have changed!\";",
+"			return \"shell has changed!\";",
 "		if (sizeof(text_t) < sizeof(hide_t)) {",
 "			/* Prepend spaces til a sizeof(hide_t) script size. */",
 "			scrpt = malloc(sizeof(hide_t));",
@@ -379,9 +383,8 @@ static const char * RTC[] = {
 "	untraceable(argv[0]);",
 "#endif",
 "	if (date && (date < (long)time(NULL))) {",
-"		fprintf(stderr, \"%s %s\\n\", shcv, cprg);",
-"		fprintf(stderr, \"%s: Out of date\\n\", argv[0]);",
-"		fprintf(stderr, \"Contact with %s\\n\", mail);",
+"		fprintf(stderr, \"%s has expired!\\n\", argv[0]);",
+"		fprintf(stderr, \"%s\\n\", mail);",
 "	} else {",
 "		argv[1] = xsh(argc, argv);",
 "		fprintf(stderr, \"%s%s%s: %s\\n\", argv[0],",
@@ -477,7 +480,7 @@ static int parse_an_arg(int argc, char * argv[])
 		break;
 	case -1:
 		if (!file) {
-			fprintf(stderr, "%s parse(-f): No specified\n", my_name);
+			fprintf(stderr, "%s parse(-f): No source file specified\n", my_name);
 			file = "";
 			return -1;
 		}
@@ -620,7 +623,7 @@ struct {
 	{ "bash", "-c", "",   "exec '%s' \"$@\"" },
 	{ "bsh",  "-c", "",   "exec '%s' \"$@\"" }, /* AIX_nvi */
 	{ "Rsh",  "-c", "",   "exec '%s' \"$@\"" }, /* AIX_nvi */
-	{ "ksh",  "-c", "--", "exec '%s' \"$@\"" },
+	{ "ksh",  "-c", "",   "exec '%s' \"$@\"" }, /* OK on Solaris, AIX and Linux (THX <bryan.hogan@dstintl.com>) */
 	{ "tsh",  "-c", "--", "exec '%s' \"$@\"" }, /* AIX */
 	{ "ash",  "-c", "--", "exec '%s' \"$@\"" }, /* Linux */
 	{ "csh",  "-c", "-b", "exec '%s' $argv" }, /* AIX: No file for $0 */
@@ -649,7 +652,7 @@ int eval_shell(char * text)
 	*opts = '\0';
 	i = sscanf(ptr, " #!%s%s %c", shll, opts, opts);
 	if (i < 1 || i > 2) {
-		fprintf(stderr, "%s Invalid script's first line: %s\n", my_name, ptr);
+		fprintf(stderr, "%s: invalid first line in script: %s\n", my_name, ptr);
 		return -1;
 	}
 	free(ptr);
@@ -716,15 +719,28 @@ char * read_script(char * file)
 	if (!text)
 		return NULL;
 	text[l] = '\0';
+
+	/* Check current System ARG_MAX limit. */
+	if (l > 0.80 * (cnt = sysconf(_SC_ARG_MAX))) {
+		fprintf(stderr, "%s: WARNING!!\n"
+"   Scripts of length near to (or higher than) the current System limit on\n"
+"   \"maximum size of arguments to EXEC\", could comprise its binary execution.\n"
+"   In the current System the call sysconf(_SC_ARG_MAX) returns %d bytes\n"
+"   and your script \"%s\" is %d bytes length.\n",
+		my_name, cnt, file, l);
+	}
 	return text;
 }
 
-int noise(char * ptr, int min, int xtra)
+int noise(char * ptr, unsigned min, unsigned xtra, int str)
 {
 	if (xtra) xtra = rand() % xtra;
 	xtra += min;
-	for (min = 0; min < xtra; min++)
-		*ptr++ = (char) rand();
+	for (min = 0; min < xtra; min++, ptr++)
+		do
+			*ptr = (char) rand();
+		while (str && !isalnum(*ptr));
+	if (str) *ptr = '\0';
 	return xtra;
 }
 
@@ -757,10 +773,10 @@ void dump_array(FILE * o, char * ptr, char * name, int l)
 	print_array(o, ptr, name, l);
 }
 
-int write_C(char * file)
+int write_C(char * file, char * argv[])
 {
 	FILE * o;
-	char buf[512];
+	char buf[SIZE];
 	int l;
 
 	sprintf(buf, "%s.x.c", file);
@@ -768,13 +784,16 @@ int write_C(char * file)
 	if (!o)
 		return -1;
 	srand((unsigned)time(NULL));
-	fprintf(o, "/* %s */\n\n", buf);
-	fprintf(o, "static  char shcv[] = \"%s %s, %s\";\n", my_name, version, subject);
-	fprintf(o, "static  char cprg[] = \"%s %s %s %s\";\n", cpright, author.f, author.s, author.e);
+	fprintf(o, "#if 0\n");
+	fprintf(o, "\t%s %s, %s\n", my_name, version, subject);
+	fprintf(o, "\t%s %s %s %s\n\n\t", cpright, author.f, author.s, author.e);
+	for (l = 0; argv[l]; l++)
+		fprintf(o, "%s ", argv[l]);
+	fprintf(o, "\n#endif\n\n");
 	fprintf(o, "static  long date = %ld;\n", date);
 	fprintf(o, "static  char mail[] = \"%s\";\n", mail);
 	fprintf(o, "static  int  relax = %d;\n", relax);
-	l = noise(buf, 256, 256);
+	l = noise(buf, 256, 256, 0);
 	dump_array(o, buf, "pswd", l);
 	state_0();
 	key(buf, l);
@@ -782,17 +801,19 @@ int write_C(char * file)
 	dump_array(o, inlo, "inlo", strlen(inlo) + 1);
 	dump_array(o, xecc, "xecc", strlen(xecc) + 1);
 	dump_array(o, lsto, "lsto", strlen(lsto) + 1);
-	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk1", author.f);
-	dump_array(o, strdup(author.f), "chk1", 10);
+	l = noise(buf, 8, 8, 1);
+	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk1", buf);
+	dump_array(o, buf, "chk1", l + 1);
 	if (!relax && key_with_file(shll)) {
-		fprintf(stderr, "%s Invalid file name: %s", my_name, shll);
+		fprintf(stderr, "%s: invalid file name: %s", my_name, shll);
 		perror("");
 		exit(1);
 	}
 	dump_array(o, opts, "opts", strlen(opts) + 1);
 	dump_array(o, text, "text", strlen(text) + 1);
-	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk2", author.s);
-	dump_array(o, strdup(author.s), "chk2", 8);
+	l = noise(buf, 8, 8, 1);
+	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk2", buf);
+	dump_array(o, buf, "chk2", l + 1);
 	fprintf(o, "typedef char %s_t[%d];\n\n", "hide", 1<<12);
 	fprintf(o, DEBUGEXEC_line, DEBUGEXEC_flag);
 	fprintf(o, TRACEABLE_line, TRACEABLE_flag);
@@ -821,7 +842,7 @@ int make(void)
 	sprintf(cmd, "strip %s.x", file);
 	if (verbose) fprintf(stderr, "%s: %s\n", my_name, cmd);
 	if (system(cmd))
-		fprintf(stderr, "%s: It does not matter\n", my_name);
+		fprintf(stderr, "%s: never mind\n", my_name);
 
 	return 0;
 }
@@ -834,7 +855,7 @@ void do_all(int argc, char * argv[])
 		return;
 	if (eval_shell(text))
 		return;
-	if (write_C(file))
+	if (write_C(file, argv))
 		return;
 	if (make())
 		return;

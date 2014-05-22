@@ -1,4 +1,4 @@
-#! /bin/csh -x
+#!/bin/csh -x
 echo Hello world
 
 # A comment

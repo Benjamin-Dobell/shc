@@ -2,7 +2,7 @@
 Purpose:
 
 	A generic shell script compiler. Shc takes a script, which is
-	specified on the command line and produces c source code. The
+	specified on the command line and produces C source code. The
 	generated source code is then compiled and linked to produce a
 	stripped binary executable. Use with care.
 
@@ -14,7 +14,7 @@ Building:
 Testing:
 
    Try:	 "make test" 
-    or:  "shc -v -f match"  then  "match.x less"
+    or:  "shc -v -f match"  then  "match.x sh"
 
 	Caveat emptor: see Copyright
 
@@ -23,7 +23,7 @@ Testing:
 	Linux, and done some testing on Irix and HPUX. 
 
 	We tested it on a few SMALL ksh scripts - big tasks should probably
-	be written in c in the first place (see _SC_ARG_MAX below)!
+	be written in C in the first place (see _SC_ARG_MAX below)!
 
 
 Bugs:
