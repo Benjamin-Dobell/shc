@@ -25,7 +25,9 @@ test: match.x
 	./match.x sh
 	@echo '***' Please try...	strings -n 7 $< \| more
 
-match.x: match
+match.x: match.x.c
+
+match.x.c: match
 	@echo '***' Compiling script $<
 	CFLAGS="$(CFLAGS)" ./shc -v -r -f $<
 

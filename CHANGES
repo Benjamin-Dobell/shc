@@ -1,5 +1,11 @@
 CHANGES
 
+3.2	Tue Mar  9 19:03:54 CET 1999
+
+	Find ancient pclose that must be fclose.
+
+
+
 3.1	Tue Feb 16 21:36:59 CET 1999
 
 	Fixed a misbehavior on scripts with a in-frist-line option
@@ -49,7 +55,7 @@ not encripted in .x.c is an stamp, expiration date and provider email
 address.
 
 	Something equivalent to cheksums have been used to enforced at
-execution that the executing shell have not been modified from the time
+execution that the executing shell has not been modified from the time
 the script was compiled. If anybody tries to change the excuting shell,
 .x will refuse to execute.
 

@@ -7,7 +7,7 @@
  * The copyright notice does not apply to that code.
  */
 static const char * my_name = "shc";
-static const char * version = "Version 3.1";
+static const char * version = "Version 3.2";
 static const char * subject = "Generic Script Compiler";
 static const char * cpright =
 "Copyright (c) 1994..1999... Francisco Rosales <frosal@fi.upm.es>";
@@ -227,6 +227,8 @@ static const char * RTC =
 "	return -1;\n"
 "}\n"
 "\n"
+"#ifdef DEBUGEXEC\n"
+"#define DEBUGEXEC	/* Define if you want to debug execvp calls */\n"
 "void debugexec(char * shll, char ** argv)\n"
 "{\n"
 "	int i;\n"
@@ -235,6 +237,7 @@ static const char * RTC =
 "		fprintf(stderr, \"argv[%d]=%.60s\\n\", i, argv[i]);\n"
 "	}\n"
 "}\n"
+"#endif\n"
 "\n"
 "void xsh(int argc, char ** argv)\n"
 "{\n"
@@ -295,7 +298,9 @@ static const char * RTC =
 "		varg[i + j] = argv[i];	/* Main run-time arguments */\n"
 "	if (ret && ret != chkenv(argc, 1))\n"
 "		return;\n"
-"/* XXX	debugexec(shll, varg); */\n"
+"#ifdef DEBUGEXEC\n"
+"	debugexec(shll, varg);\n"
+"#endif\n"
 "	execvp(shll, varg);\n"
 "	perror(shll);\n"
 "	exit(1);\n"
@@ -303,8 +308,9 @@ static const char * RTC =
 "\n"
 "int main(int argc, char ** argv)\n"
 "{\n"
-"/* XXX	debugexec(\"main\", argv); */\n"
-"\n"
+"#ifdef DEBUGEXEC\n"
+"	debugexec(\"main\", argv);\n"
+"#endif\n"
 "	if (date && (date < (long)time(NULL))) {\n"
 "		fprintf(stderr, \"%s\\n\", stmp);\n"
 "		fprintf(stderr, \"%s: Out of date\\n\", argv[0]);\n"
@@ -650,7 +656,7 @@ char * read_script(char * file)
 			break;
 		l += cnt;
 	}
-	pclose(i);
+	fclose(i);
 	text = realloc(text, l + 1);
 	if (!text)
 		return NULL;
@@ -732,7 +738,7 @@ int write_C(char * file)
 	dump_data(o, strdup("Rosales"), "chk2", 8);
 	fprintf(o, "%s", RTC);
 	fflush(o);
-	pclose(o);
+	fclose(o);
 	return 0;
 }
 
