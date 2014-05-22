@@ -19,7 +19,7 @@ CFLAGS = -Wall -O -Ae
 CFLAGS = -w -verbose -fast -std1 -g0
 
 # For GNU C compiler
-CFLAGS = -Wall -O6 -pedantic
+CFLAGS = -Wall -O6 # -pedantic
 
 SHELL = /bin/sh
 
@@ -47,12 +47,25 @@ ask_for_strings:
 	@echo '***	¿Do you want to see strings in the generated binary?'
 	@echo '***	Please try...	make strings'
 
-strings: make_the_strings ask_for_install
+strings: make_the_strings ask_for_expiration
 
 make_the_strings: match.x
 	@echo '***	Running: "strings -n 5 'match.x'"'
 	@echo '***	It must show no sensible information...'
 	strings -n 5 match.x
+
+ask_for_expiration:
+	@echo '***	¿Do you want to probe expiration date?'
+	@echo '***	Please try...	make expiration'
+
+expiration: til_yesterday ask_for_install
+
+til_yesterday: shc match
+	@echo '***	Compiling "match" to expired date'
+	CFLAGS="$(CFLAGS)" ./shc -vvv -e `date "+%d/%m/%Y"` -f match
+	@echo '***	Running a compiled test script!'
+	@echo '***	It must fail showing "./match.x: has expired!"'
+	./match.x
 
 ask_for_install:
 	@echo '***	¿Do you want to install shc?'

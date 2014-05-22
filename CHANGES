@@ -1,6 +1,14 @@
 CHANGES
 
+
+3.8.7	Wed Feb 10 20:40:37 CET 2010
+
+	- Bug on 64bit systems with expiration dates.
+
+
+
 3.8.6	Fri Jul  7 15:54:39 CEST 2006
+
 	Thanks to George Danchev <danchev@spnet.net> for:
 	- License clarification about the rc4 implementation.
 
