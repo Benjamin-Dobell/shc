@@ -1,15 +1,22 @@
 /* shc.c */
 
 /**
- * This software contains the 'Alleged RC4' source code.
- * The original source code was published on the Net by a group of cypherpunks.
- * I picked up a modified version from the news.
- * The copyright notice does not apply to that code.
+ * This software contains an ad hoc version of the 'Alleged RC4' algorithm,
+ * which was anonymously posted on sci.crypt news by cypherpunks on Sep 1994.
+ *
+ * My implementation is a complete rewrite of the one found in
+ * an unknown-copyright (283 characters) version picked up from:
+ *    From: allen@gateway.grumman.com (John L. Allen)
+ *    Newsgroups: comp.lang.c
+ *    Subject: Shrink this C code for fame and fun
+ *    Date: 21 May 1996 10:49:37 -0400
+ * And it is licensed also under GPL.
  */
+
 static const char my_name[] = "shc";
-static const char version[] = "Version 3.8.5";
+static const char version[] = "Version 3.8.6";
 static const char subject[] = "Generic Script Compiler";
-static const char cpright[] = "Copyright (c) 1994-2005";
+static const char cpright[] = "Copyright (c) 1994-2006";
 static const struct { const char * f, * s, * e; }
 	author = { "Francisco", "Rosales", "<frosal@fi.upm.es>" };
 
@@ -126,13 +133,7 @@ static const char * RTC[] = {
 "#include <time.h>",
 "#include <unistd.h>",
 "",
-"/**",
-" * 'Alleged RC4' Source Code picked up from the news.",
-" * From: allen@gateway.grumman.com (John L. Allen)",
-" * Newsgroups: comp.lang.c",
-" * Subject: Shrink this C code for fame and fun",
-" * Date: 21 May 1996 10:49:37 -0400",
-" */",
+"/* 'Alleged RC4' */",
 "",
 "static unsigned char stte[256], indx, jndx, kndx;",
 "",
@@ -184,6 +185,8 @@ static const char * RTC[] = {
 "		len--;",
 "	}",
 "}",
+"",
+"/* End of ARC4 */",
 "",
 "/*",
 " * Key with file invariants. ",
@@ -537,13 +540,7 @@ static void parse_args(int argc, char * argv[])
 	}
 }
 
-/**
- * 'Alleged RC4' Source Code picked up from the news.
- * From: allen@gateway.grumman.com (John L. Allen)
- * Newsgroups: comp.lang.c
- * Subject: Shrink this C code for fame and fun
- * Date: 21 May 1996 10:49:37 -0400
- */
+/* 'Alleged RC4' */
 
 static unsigned char stte[256], indx, jndx, kndx;
 
@@ -595,6 +592,8 @@ void arc4(void * str, int len)
 		len--;
 	}
 }
+
+/* End of ARC4 */
 
 /*
  * Key with file invariants.
