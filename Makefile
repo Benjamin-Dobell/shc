@@ -19,9 +19,9 @@ CFLAGS = -Wall -O -Ae
 CFLAGS = -w -verbose -fast -std1 -g0
 
 # For GNU C compiler
-CFLAGS = -Wall -O6 # -pedantic
+CFLAGS = -Wall # -O6 -pedantic
 
-SHELL = /bin/sh
+#SHELL = /bin/sh
 
 all: shc ask_for_test
 

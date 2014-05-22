@@ -14,9 +14,9 @@
  */
 
 static const char my_name[] = "shc";
-static const char version[] = "Version 3.8.7";
+static const char version[] = "Version 3.8.9";
 static const char subject[] = "Generic Script Compiler";
-static const char cpright[] = "Copyright (c) 1994-2009";
+static const char cpright[] = "Copyright (c) 1994-2012";
 static const struct { const char * f, * s, * e; }
 	author = { "Francisco", "Rosales", "<frosal@fi.upm.es>" };
 
@@ -323,6 +323,8 @@ static const char * RTC[] = {
 "	char * scrpt;",
 "	int ret, i, j;",
 "	char ** varg;",
+"	char * me = getenv(\"_\");",
+"	if (me == NULL) { me = argv[0]; }",
 "",
 "	stte_0();",
 "	 key(pswd, pswd_z);",
@@ -357,24 +359,20 @@ static const char * RTC[] = {
 "		arc4(chk2, chk2_z);",
 "		if ((chk2_z != tst2_z) || memcmp(tst2, chk2, tst2_z))",
 "			return tst2;",
-"		if (text_z < hide_z) {",
-"			/* Prepend spaces til a hide_z script size. */",
-"			scrpt = malloc(hide_z);",
-"			if (!scrpt)",
-"				return 0;",
-"			memset(scrpt, (int) ' ', hide_z);",
-"			memcpy(&scrpt[hide_z - text_z], text, text_z);",
-"		} else {",
-"			scrpt = text;	/* Script text */",
-"		}",
+"		/* Prepend hide_z spaces to script text to hide it. */",
+"		scrpt = malloc(hide_z + text_z);",
+"		if (!scrpt)",
+"			return 0;",
+"		memset(scrpt, (int) ' ', hide_z);",
+"		memcpy(&scrpt[hide_z], text, text_z);",
 "	} else {			/* Reexecute */",
 "		if (*xecc) {",
 "			scrpt = malloc(512);",
 "			if (!scrpt)",
 "				return 0;",
-"			sprintf(scrpt, xecc, argv[0]);",
+"			sprintf(scrpt, xecc, me);",
 "		} else {",
-"			scrpt = argv[0];",
+"			scrpt = me;",
 "		}",
 "	}",
 "	j = 0;",

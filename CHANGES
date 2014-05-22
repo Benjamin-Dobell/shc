@@ -1,5 +1,17 @@
 CHANGES
 
+3.8.9	Wed Apr 25 09:24:25 CEST 2012
+
+	Thanks to Giacomo Picconi <giacomo.picconi@gpstudio.com> for:
+	- Fixing a long standing bug making the source not hidden.
+
+
+
+3.8.8	Mon Nov 28 11:26:25 CEST 2012
+
+	"me".
+
+
 
 3.8.7	Wed Feb 10 20:40:37 CET 2010
 
