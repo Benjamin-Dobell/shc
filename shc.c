@@ -7,10 +7,11 @@
  * The copyright notice does not apply to that code.
  */
 static const char * my_name = "shc";
-static const char * version = "Version 3.3";
+static const char * version = "Version 3.4";
 static const char * subject = "Generic Script Compiler";
 static const char * cpright = "Copyright (c) 1994..2002...";
-static const char * authorm = "Francisco Rosales <frosal@fi.upm.es>";
+static const struct { const char * f, * s, *e; }
+		     author = { "Francisco", "Rosales", "<frosal@fi.upm.es>" };
 
 static const char * copying =
 "Copying:\n"
@@ -97,10 +98,12 @@ static char * text;
 static int verbose;
 static int debuging;
 static const char * RTC =
+"/* rtc.c */\n"
 "\n"
 "#include <sys/stat.h>\n"
 "#include <sys/types.h>\n"
 "\n"
+"#include <errno.h>\n"
 "#include <stdio.h>\n"
 "#include <stdlib.h>\n"
 "#include <string.h>\n"
@@ -167,18 +170,17 @@ static const char * RTC =
 "	}\n"
 "}\n"
 "\n"
-"void key_with_file(char * file)\n"
+"/*\n"
+" * Key with file invariants. \n"
+" */\n"
+"int key_with_file(char * file)\n"
 "{\n"
 "	struct stat statf[1];\n"
 "	struct stat control[1];\n"
 "\n"
-"	if (!file)\n"
-"		return;\n"
+"	if (stat(file, statf) < 0)\n"
+"		return -1;\n"
 "\n"
-"	if (stat(file, statf) < 0) {\n"
-"		perror(file);\n"
-"		exit(1);\n"
-"	}\n"
 "	/* Turn on stable fields */\n"
 "	memset(control, 0, sizeof(control));\n"
 "	control->st_ino = statf->st_ino;\n"
@@ -190,7 +192,26 @@ static const char * RTC =
 "	control->st_mtime = statf->st_mtime;\n"
 "	control->st_ctime = statf->st_ctime;\n"
 "	key((char *)control, sizeof(control));\n"
+"	return 0;\n"
 "}\n"
+"\n"
+"#ifdef DEBUGEXEC\n"
+"#define DEBUGEXEC	/* Define if you want to debug execvp calls */\n"
+"\n"
+"void debugexec(char * shll, int argc, char ** argv)\n"
+"{\n"
+"	int i;\n"
+"	fprintf(stderr, \"shll=%s\\n\", shll ? shll : \"<null>\");\n"
+"	fprintf(stderr, \"argc=%d\\n\", argc);\n"
+"	if (!argv) {\n"
+"		fprintf(stderr, \"argv=<null>\\n\");\n"
+"	} else { \n"
+"		for (i = 0; i <= argc ; i++)\n"
+"			fprintf(stderr, \"argv[%d]=%.60s\\n\", i, argv[i] ? argv[i] : \"<null>\");\n"
+"	}\n"
+"}\n"
+"\n"
+"#endif /* DEBUGEXEC */\n"
 "\n"
 "void rmarg(char ** argv, char * arg)\n"
 "{\n"
@@ -199,68 +220,70 @@ static const char * RTC =
 "		*argv = argv[1];\n"
 "}\n"
 "\n"
-"int chkenv(int argc, int rm)\n"
+"int chkenv(int argc)\n"
 "{\n"
 "	char buff[512];\n"
-"	int mask;\n"
-"	int l, m, a, c;\n"
+"	unsigned mask, m;\n"
+"	int l, a, c;\n"
 "	char * string;\n"
 "	extern char ** environ;\n"
 "\n"
-"	mask = (int) chkenv ^ (int) getpid();\n"
+"	mask  = (unsigned)chkenv;\n"
+"	mask ^= (unsigned)getpid() * ~mask;\n"
 "	sprintf(buff, \"x%x\", mask);\n"
 "	string = getenv(buff);\n"
+"#ifdef DEBUGEXEC\n"
+"	fprintf(stderr, \"getenv(%s)=%s\\n\", buff, string ? string : \"<null>\");\n"
+"#endif\n"
 "	l = strlen(buff);\n"
 "	if (!string) {\n"
 "		/* 1st */\n"
-"		sprintf(&buff[l], \"=%d %d\", mask, argc);\n"
+"		sprintf(&buff[l], \"=%u %d\", mask, argc);\n"
 "		putenv(strdup(buff));\n"
 "		return 0;\n"
 "	}\n"
-"	c = sscanf(string, \"%d %d%c\", &m, &a, buff);\n"
+"	c = sscanf(string, \"%u %d%c\", &m, &a, buff);\n"
 "	if (c == 2 && m == mask) {\n"
 "		/* 3rd */\n"
-"		if (rm)\n"
-"			rmarg(environ, &string[-l - 1]);\n"
+"		rmarg(environ, &string[-l - 1]);\n"
 "		return 1 + (argc - a);\n"
 "	}\n"
 "	return -1;\n"
 "}\n"
 "\n"
-"#ifdef DEBUGEXEC\n"
-"#define DEBUGEXEC	/* Define if you want to debug execvp calls */\n"
-"\n"
-"void debugexec(char * shll, char ** argv)\n"
-"{\n"
-"	int i;\n"
-"	fprintf(stderr, \"shll=%s\\n\", shll ? shll : \"<null>\");\n"
-"	for (i = 0; argv && argv[i]; i++) {\n"
-"		fprintf(stderr, \"argv[%d]=%.60s\\n\", i, argv[i]);\n"
-"	}\n"
-"}\n"
-"\n"
-"#endif /* DEBUGEXEC */\n"
-"\n"
 "#define UNTRACEABLE	/* Define to prevent ptrace this executable */\n"
 "#ifdef UNTRACEABLE\n"
 "\n"
+"#define _LINUX_SOURCE_COMPAT\n"
 "#include <sys/ptrace.h>\n"
 "#include <sys/types.h>\n"
 "#include <sys/wait.h>\n"
+"#include <fcntl.h>\n"
 "#include <signal.h>\n"
 "#include <stdio.h>\n"
 "#include <unistd.h>\n"
 "\n"
 "void untraceable(char * argv0)\n"
 "{\n"
-"	int pid;\n"
+"	char proc[80];\n"
+"	int pid, mine;\n"
 "\n"
 "	switch(pid = vfork()) {\n"
 "	case  0:\n"
 "		pid = getppid();\n"
-"		if (!ptrace(PTRACE_ATTACH, pid, 0, 0) && !kill(pid, SIGCONT))\n"
-"			_exit(0);\n"
-"		kill(pid, SIGKILL);\n"
+"		/* For problematic SunOS ptrace */\n"
+"		sprintf(proc, \"/proc/%d/as\", (int)pid);\n"
+"		close(0);\n"
+"		mine = !open(proc, O_RDWR|O_EXCL);\n"
+"		if (!mine && errno != EBUSY)\n"
+"			mine = !ptrace(PTRACE_ATTACH, pid, 0, 0);\n"
+"		if (mine) {\n"
+"			kill(pid, SIGCONT);\n"
+"		} else {\n"
+"			fprintf(stderr, \"%s: Being traced!\\n\", argv0);\n"
+"			kill(pid, SIGKILL);\n"
+"		}\n"
+"		_exit(mine);\n"
 "	case -1:\n"
 "		break;\n"
 "	default:\n"
@@ -272,38 +295,45 @@ static const char * RTC =
 "}\n"
 "#endif	/* UNTRACEABLE */\n"
 "\n"
-"void xsh(int argc, char ** argv)\n"
+"char * xsh(int argc, char ** argv)\n"
 "{\n"
 "	char buff[512];\n"
 "	char * scrpt;\n"
 "	int ret, i, j;\n"
 "	char ** varg;\n"
 "\n"
-"	ret = chkenv(argc, 0);\n"
-"	if (ret < 0) {\n"
-"		fprintf(stderr, \"%s: unnormal behavior\\n\", argv[0]);\n"
-"		exit(1);\n"
-"	}\n"
+"	state_0();\n"
+"	key(pswd, sizeof(pswd_t));\n"
+"	rc4(shll, sizeof(shll_t));\n"
+"	rc4(inlo, sizeof(inlo_t));\n"
+"	rc4(xecc, sizeof(xecc_t));\n"
+"	rc4(lsto, sizeof(lsto_t));\n"
+"	rc4(chk1, sizeof(chk1_t));\n"
+"	if (strcmp(TEXT_chk1, chk1))\n"
+"		return \"I have changed!\";\n"
+"	ret = chkenv(argc);\n"
+"	if (ret < 0)\n"
+"		return \"Unnormal behavior!\";\n"
 "	varg = (char **)calloc(argc + 10, sizeof(char *));\n"
-"	if (varg == NULL) {\n"
-"		perror(argv[0]);\n"
-"		exit(1);\n"
-"	}\n"
+"	if (!varg)\n"
+"		return 0;\n"
 "	if (ret) {\n"
-"		key_with_file(relax ? NULL : shll);\n"
+"		if (!relax && key_with_file(shll))\n"
+"			return shll;\n"
 "		rc4(opts, sizeof(opts_t));\n"
 "		rc4(text, sizeof(text_t));\n"
 "		rc4(chk2, sizeof(chk2_t));\n"
-"		if (strcmp(\"Rosales\", chk2)) {\n"
-"			fprintf(stderr, \"%s: Shell have changed.\\n\", argv[0]);\n"
-"			exit(1);\n"
-"		}\n"
-"		memset(head, (int) ' ', sizeof(head));\n"
-"		head[0] = '#';\n"
-"		scrpt = head;		/* Script text */\n"
-"		if (&head[sizeof(head)] != text) {\n"
-"			fprintf(stderr, \"%s: Bad alignement.\\n\", argv[0]);\n"
-"			exit(1);\n"
+"		if (strcmp(TEXT_chk2, chk2))\n"
+"			return \"Shell have changed!\";\n"
+"		if (sizeof(text_t) < sizeof(hide_t)) {\n"
+"			/* Prepend spaces til a sizeof(hide_t) script size. */\n"
+"			scrpt = malloc(sizeof(hide_t));\n"
+"			if (!scrpt)\n"
+"				return 0;\n"
+"			memset(scrpt, (int) ' ', sizeof(hide_t));\n"
+"			memcpy(&scrpt[sizeof(hide_t) - sizeof(text_t)], text, sizeof(text_t));\n"
+"		} else {\n"
+"			scrpt = text;	/* Script text */\n"
 "		}\n"
 "	} else {			/* Reexecute */\n"
 "		if (*xecc) {\n"
@@ -319,56 +349,43 @@ static const char * RTC =
 "		varg[j++] = opts;	/* Options on 1st line of code */\n"
 "	if (*inlo)\n"
 "		varg[j++] = inlo;	/* Option introducing inline code */\n"
-"	varg[j++] = scrpt;\n"
+"	varg[j++] = scrpt;		/* The script itself */\n"
 "	if (*lsto)\n"
 "		varg[j++] = lsto;	/* Option meaning last option */\n"
-"	i = 0;\n"
-"	if (ret > 1) {\n"
-"		j -= ret;\n"
-"		i = ret;\n"
-"	}\n"
-"	for (; i <= argc; i++)\n"
-"		varg[i + j] = argv[i];	/* Main run-time arguments */\n"
-"	if (ret && ret != chkenv(argc, 1))\n"
-"		return;\n"
+"	i = (ret > 1) ? ret : 0;	/* Args numbering correction */\n"
+"	while (i < argc)\n"
+"		varg[j++] = argv[i++];	/* Main run-time arguments */\n"
+"	varg[j] = 0;			/* NULL terminated array */\n"
 "#ifdef DEBUGEXEC\n"
-"	debugexec(shll, varg);\n"
+"	debugexec(shll, j, varg);\n"
 "#endif\n"
 "	execvp(shll, varg);\n"
-"	perror(shll);\n"
-"	exit(1);\n"
+"	return shll;\n"
 "}\n"
 "\n"
 "int main(int argc, char ** argv)\n"
 "{\n"
 "#ifdef DEBUGEXEC\n"
-"	debugexec(\"main\", argv);\n"
+"	debugexec(\"main\", argc, argv);\n"
 "#endif\n"
 "#ifdef UNTRACEABLE\n"
 "	untraceable(argv[0]);\n"
 "#endif\n"
 "	if (date && (date < (long)time(NULL))) {\n"
-"		fprintf(stderr, \"%s\\n\", stmp);\n"
+"		fprintf(stderr, \"%s %s\\n\", shcv, cprg);\n"
 "		fprintf(stderr, \"%s: Out of date\\n\", argv[0]);\n"
 "		fprintf(stderr, \"Contact with %s\\n\", mail);\n"
-"		exit(0);\n"
+"	} else {\n"
+"		argv[1] = xsh(argc, argv);\n"
+"		fprintf(stderr, \"%s%s%s: %s\\n\", argv[0],\n"
+"			errno ? \": \" : \"\",\n"
+"			errno ? strerror(errno) : \"\",\n"
+"			argv[1] ? argv[1] : \"<null>\"\n"
+"		);\n"
 "	}\n"
-"	state_0();\n"
-"	key(pswd, sizeof(pswd_t));\n"
-"	rc4(shll, sizeof(shll_t));\n"
-"	rc4(inlo, sizeof(inlo_t));\n"
-"	rc4(xecc, sizeof(xecc_t));\n"
-"	rc4(lsto, sizeof(lsto_t));\n"
-"	rc4(chk1, sizeof(chk1_t));\n"
-"	if (strcmp(\"Francisco\", chk1)) {\n"
-"		fprintf(stderr, \"%s: I have changed.\\n\", argv[0]);\n"
-"		exit(1);\n"
-"	}\n"
-"	xsh(argc, argv);\n"
-"	/* This must never end this way */\n"
-"	exit(1);\n"
 "	return 1;\n"
-"}\n";
+"}\n"
+;
 
 static void error(const char * type, const char * frm, ...)
 {
@@ -443,22 +460,19 @@ static int parse_an_arg(int argc, char * argv[])
 		break;
 	case 'C':
 		error("", " %s, %s", version, subject);
-		error("", " %s", cpright);
-		error("", " %s", authorm);
+		error("", " %s %s %s %s", cpright, author.f, author.s, author.e);
 		error("", " %s", copying);
 		exit(0);
 		break;
 	case 'A':
 		error("", " %s, %s", version, subject);
-		error("", " %s", cpright);
-		error("", " %s", authorm);
+		error("", " %s %s %s %s", cpright, author.f, author.s, author.e);
 		error("", " %s", abstract);
 		exit(0);
 		break;
 	case 'h':
 		error("", " %s, %s", version, subject);
-		error("", " %s", cpright);
-		error("", " %s", authorm);
+		error("", " %s %s %s %s", cpright, author.f, author.s, author.e);
 		error("", " %s%s", usage, help);
 		exit(0);
 		break;
@@ -562,17 +576,17 @@ void rc4(char * str, int len)
 	}
 }
 
-void key_with_file(char * file)
+/*
+ * Key with file invariants.
+ */
+int key_with_file(char * file)
 {
 	struct stat statf[1];
 	struct stat control[1];
 
-	if (!file)
-		return;
+	if (stat(file, statf) < 0)
+		return -1;
 
-	if (stat(file, statf) < 0) {
-		error("sx", " Invalid file name: %s", file);
-	}
 	/* Turn on stable fields */
 	memset(control, 0, sizeof(control));
 	control->st_ino = statf->st_ino;
@@ -584,6 +598,7 @@ void key_with_file(char * file)
 	control->st_mtime = statf->st_mtime;
 	control->st_ctime = statf->st_ctime;
 	key((char *)control, sizeof(control));
+	return 0;
 }
 
 /*
@@ -620,7 +635,7 @@ int eval_shell(char * text)
 		i = strlen(text);
 	else
 		i = ptr - text;
-	ptr = malloc(i + 1);
+	ptr  = malloc(i + 1);
 	shll = malloc(i + 1);
 	opts = malloc(i + 1);
 	if (!ptr || !shll || !opts)
@@ -637,7 +652,7 @@ int eval_shell(char * text)
 	free(ptr);
 
 	shll = realloc(shll, strlen(shll) + 1);
-	ptr = strrchr(shll, (int)'/');
+	ptr  = strrchr(shll, (int)'/');
 	if (*ptr == '/')
 		ptr++;
 	error("v", " shll=%s", ptr);
@@ -728,7 +743,7 @@ void print_str(FILE * o, char * ptr, int l, int n)
 void print_data(FILE * o, char * ptr, char * name, int l)
 {
 	fprintf(o, "typedef char %s_t[%d];\n", name, l);
-	fprintf(o, "static char %s[] = ", name);
+	fprintf(o, "static  char %s[] = ", name);
 	print_str(o, ptr, l, l + (rand() & 0xf));
 	fprintf(o, ";\n");
 }
@@ -742,7 +757,6 @@ void dump_data(FILE * o, char * ptr, char * name, int l)
 int write_C(char * file)
 {
 	FILE * o;
-	char * shll2;
 	char buf[512];
 	int l;
 
@@ -752,27 +766,28 @@ int write_C(char * file)
 		return -1;
 	srand((unsigned)time(NULL));
 	fprintf(o, "/* %s */\n\n", buf);
-	fprintf(o, "static char stmp[] = \"%s %s, %s\\n\"\n\"%s %s\";\n",
-		my_name, version, subject, cpright, authorm);
-	fprintf(o, "static long date = %ld;\n", date);
-	fprintf(o, "static char mail[] = \"%s\";\n", mail);
-	fprintf(o, "static int relax = %d;\n", relax);
+	fprintf(o, "static  char shcv[] = \"%s %s, %s\";\n", my_name, version, subject);
+	fprintf(o, "static  char cprg[] = \"%s %s %s %s\";\n", cpright, author.f, author.s, author.e);
+	fprintf(o, "static  long date = %ld;\n", date);
+	fprintf(o, "static  char mail[] = \"%s\";\n", mail);
+	fprintf(o, "static  int  relax = %d;\n", relax);
 	l = noise(buf, 256, 256);
 	dump_data(o, buf, "pswd", l);
 	state_0();
 	key(buf, l);
-	shll2 = strdup(shll);
-	dump_data(o, shll, "shll", strlen(shll) + 1);
-	shll = shll2;
+	dump_data(o, strdup(shll), "shll", strlen(shll) + 1);
 	dump_data(o, inlo, "inlo", strlen(inlo) + 1);
 	dump_data(o, xecc, "xecc", strlen(xecc) + 1);
 	dump_data(o, lsto, "lsto", strlen(lsto) + 1);
-	dump_data(o, strdup("Francisco"), "chk1", 10);
-	key_with_file(relax ? NULL : shll);
+	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk1", author.f);
+	dump_data(o, strdup(author.f), "chk1", 10);
+	if (!relax && key_with_file(shll))
+		error("sx", " Invalid file name: %s", shll);
 	dump_data(o, opts, "opts", strlen(opts) + 1);
-	fprintf(o, "static char head[4096] = \"#! \";\n");
 	dump_data(o, text, "text", strlen(text) + 1);
-	dump_data(o, strdup("Rosales"), "chk2", 8);
+	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk2", author.s);
+	dump_data(o, strdup(author.s), "chk2", 8);
+	fprintf(o, "typedef char %s_t[%d];\n", "hide", 1<<12);
 	fprintf(o, "%s", RTC);
 	fflush(o);
 	fclose(o);

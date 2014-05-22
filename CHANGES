@@ -1,8 +1,15 @@
 CHANGES
 
+3.4	Tue Apr 16 17:43:12 CEST 2002
+
+	Remove "bad alignment" problem on AIX and other systems.
+	Where exists, use /proc/<pid>/as in untraceable.
+
+
 3.3	Thu Jan 24 21:27:07 CET 2002
 
 	Prevent to ptrace the process.
+
 
 3.2	Tue Mar  9 19:03:54 CET 1999
 

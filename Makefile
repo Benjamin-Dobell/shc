@@ -31,8 +31,8 @@ test: match.x
 match.x: match.x.c
 
 match.x.c: match
-	@echo '***' Compiling script $<
-	CFLAGS="$(CFLAGS)" ./shc -v -r -f $<
+	@echo '***' Compiling script match
+	CFLAGS="$(CFLAGS)" ./shc -v -r -f match
 
 clean:
 	rm -f *.o *~ *.x.c
