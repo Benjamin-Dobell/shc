@@ -1,4 +1,3 @@
-:
 #! /bin/csh -x
 echo Hello world
 

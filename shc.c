@@ -6,69 +6,74 @@
  * I picked up a modified version from the news.
  * The copyright notice does not apply to that code.
  */
-static const char * my_name = "shc";
-static const char * version = "Version 3.4";
-static const char * subject = "Generic Script Compiler";
-static const char * cpright = "Copyright (c) 1994..2002...";
-static const struct { const char * f, * s, *e; }
-		     author = { "Francisco", "Rosales", "<frosal@fi.upm.es>" };
+static const char my_name[] = "shc";
+static const char version[] = "Version 3.6";
+static const char subject[] = "Generic Script Compiler";
+static const char cpright[] = "Copyright (c) 1994..2003...";
+static const struct { const char * f, * s, * e; }
+	author = { "Francisco", "Rosales", "<frosal@fi.upm.es>" };
 
-static const char * copying =
-"Copying:\n"
-"\n"
-"    This program is free software; you can redistribute it and/or modify\n"
-"    it under the terms of the GNU General Public License as published by\n"
-"    the Free Software Foundation; either version 2 of the License, or\n"
-"    (at your option) any later version.\n"
-"\n"
-"    This program is distributed in the hope that it will be useful,\n"
-"    but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-"    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-"    GNU General Public License for more details.\n"
-"\n"
-"    You should have received a copy of the GNU General Public License\n"
-"    along with this program; if not, write to the Free Software\n"
-"    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.\n"
-"\n"
-"    Report problems and questions to:\n"
-"\n"
-"    frosal@fi.upm.es\n";
+static const char * copying[] = {
+"Copying:",
+"",
+"    This program is free software; you can redistribute it and/or modify",
+"    it under the terms of the GNU General Public License as published by",
+"    the Free Software Foundation; either version 2 of the License, or",
+"    (at your option) any later version.",
+"",
+"    This program is distributed in the hope that it will be useful,",
+"    but WITHOUT ANY WARRANTY; without even the implied warranty of",
+"    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the",
+"    GNU General Public License for more details.",
+"",
+"    You should have received a copy of the GNU General Public License",
+"    along with this program; if not, write to the Free Software",
+"    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.",
+"",
+"    Report problems and questions to:",
+"",
+0};
 
-static const char * abstract =
-"Abstract:\n"
-"\n"
-"    This tool generates a stripped binary executable version\n"
-"    of the script specified at command line.\n"
-"\n"
-"    Binary version will be named with .x extension.\n"
-"\n"
-"    You can specify expiration date [-e] too, after which binary will\n"
-"    refuse to be executed, displaying \"Contact with [-m]\" instead.\n"
-"\n"
-"    You can compile whatever interpreted script, but valid [-i], [-x]\n"
-"    and [-l] options must be given.\n";
+static const char * abstract[] = {
+"Abstract:",
+"",
+"    This tool generates a stripped binary executable version",
+"    of the script specified at command line.",
+"",
+"    Binary version will be named with .x extension.",
+"",
+"    You can specify expiration date [-e] too, after which binary will",
+"    refuse to be executed, displaying \"Contact with [-m]\" instead.",
+"",
+"    You can compile whatever interpreted script, but valid [-i], [-x]",
+"    and [-l] options must be given.",
+"",
+0};
 
-static const char * usage =
-"Usage: -f script [-e date] [-m addr] [-i iopt] [-x cmnd] [-l lopt] [-rvCAh]";
+static const char usage[] =
+"Usage: -f script [-e date] [-m addr] [-i iopt] [-x cmnd] [-l lopt] [-rvDTCAh]";
 
-static const char * help =
-"\n"
-"    -e %s  Expiration date in dd/mm/yyyy format [NO]\n"
-"    -m %s  e-Mail address to contact with at expiration [your provider]\n"
-"    -f %s  File name of the script to compile\n"
-"    -i %s  Inline option for this interpreter i.e: -e\n"
-"    -x %s  eXec command, as a printf format i.e: exec('%s',@ARGV);\n"
-"    -l %s  Last option i.e: --\n"
-"    -r     force Relaxed security. Make a redistributable binary.\n"
-"    -v     Verbose\n"
-"    -C     Copying\n"
-"    -A     Abstract\n"
-"    -h     Help\n"
-"\n"
-"       Environment variables used:\n"
-"       Name    Default Usage\n"
-"       CC      cc      C language compiler\n"
-"       CFLAGS  <none>  Flags for C compiler\n";
+static const char * help[] = {
+"    -e %s  Expiration date in dd/mm/yyyy format [NO]",
+"    -m %s  e-Mail address to contact with at expiration [your provider]",
+"    -f %s  File name of the script to compile",
+"    -i %s  Inline option for this interpreter i.e: -e",
+"    -x %s  eXec command, as a printf format i.e: exec('%s',@ARGV);",
+"    -l %s  Last option i.e: --",
+"    -r     force Relaxed security. Make a redistributable binary",
+"    -v     Verbose",
+"    -D     switch ON Debug exec calls [OFF]",
+"    -T     switch ON Traceable binary [OFF]",
+"    -C     Copying",
+"    -A     Abstract",
+"    -h     Help",
+"",
+"       Environment variables used:",
+"       Name    Default Usage",
+"       CC      cc      C language compiler",
+"       CFLAGS  <none>  Flags for C compiler",
+"",
+0};
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -96,326 +101,305 @@ static char * lsto;
 static char * opts;
 static char * text;
 static int verbose;
-static int debuging;
-static const char * RTC =
-"/* rtc.c */\n"
-"\n"
-"#include <sys/stat.h>\n"
-"#include <sys/types.h>\n"
-"\n"
-"#include <errno.h>\n"
-"#include <stdio.h>\n"
-"#include <stdlib.h>\n"
-"#include <string.h>\n"
-"#include <time.h>\n"
-"#include <unistd.h>\n"
-"\n"
-"/**\n"
-" * 'Alleged RC4' Source Code picked up from the news.\n"
-" * From: allen@gateway.grumman.com (John L. Allen)\n"
-" * Newsgroups: comp.lang.c\n"
-" * Subject: Shrink this C code for fame and fun\n"
-" * Date: 21 May 1996 10:49:37 -0400\n"
-" */\n"
-"\n"
-"static unsigned char state[256], * ptr, indx, jndx, tmp;\n"
-"\n"
-"/*\n"
-" * Reset rc4 state. \n"
-" */\n"
-"void state_0(void)\n"
-"{\n"
-"	indx = jndx = 0;\n"
-"	do {\n"
-"		state[indx] = indx;\n"
-"	} while (++indx);\n"
-"}\n"
-"\n"
-"/*\n"
-" * Set key. Can be used more than once. \n"
-" */\n"
-"void key(char * str, int len)\n"
-"{\n"
-"	ptr = (unsigned char *)str;\n"
-"	while (len > 0) {\n"
-"		do {\n"
-"			tmp = state[indx];\n"
-"			jndx += tmp;\n"
-"			jndx += ptr[(int)indx % len];\n"
-"			state[indx] = state[jndx];\n"
-"			state[jndx] = tmp;\n"
-"		} while (++indx);\n"
-"		ptr += 256;\n"
-"		len -= 256;\n"
-"	}\n"
-"}\n"
-"\n"
-"/*\n"
-" * Crypt data. \n"
-" */\n"
-"void rc4(char * str, int len)\n"
-"{\n"
-"	ptr = (unsigned char *)str;\n"
-"	jndx = 0;\n"
-"	while (len > 0) {\n"
-"		indx++;\n"
-"		tmp = state[indx];\n"
-"		jndx += tmp;\n"
-"		state[indx] = state[jndx];\n"
-"		state[jndx] = tmp;\n"
-"		tmp += state[indx];\n"
-"		*ptr ^= state[tmp];\n"
-"		ptr++;\n"
-"		len--;\n"
-"	}\n"
-"}\n"
-"\n"
-"/*\n"
-" * Key with file invariants. \n"
-" */\n"
-"int key_with_file(char * file)\n"
-"{\n"
-"	struct stat statf[1];\n"
-"	struct stat control[1];\n"
-"\n"
-"	if (stat(file, statf) < 0)\n"
-"		return -1;\n"
-"\n"
-"	/* Turn on stable fields */\n"
-"	memset(control, 0, sizeof(control));\n"
-"	control->st_ino = statf->st_ino;\n"
-"	control->st_dev = statf->st_dev;\n"
-"	control->st_rdev = statf->st_rdev;\n"
-"	control->st_uid = statf->st_uid;\n"
-"	control->st_gid = statf->st_gid;\n"
-"	control->st_size = statf->st_size;\n"
-"	control->st_mtime = statf->st_mtime;\n"
-"	control->st_ctime = statf->st_ctime;\n"
-"	key((char *)control, sizeof(control));\n"
-"	return 0;\n"
-"}\n"
-"\n"
-"#ifdef DEBUGEXEC\n"
-"#define DEBUGEXEC	/* Define if you want to debug execvp calls */\n"
-"\n"
-"void debugexec(char * shll, int argc, char ** argv)\n"
-"{\n"
-"	int i;\n"
-"	fprintf(stderr, \"shll=%s\\n\", shll ? shll : \"<null>\");\n"
-"	fprintf(stderr, \"argc=%d\\n\", argc);\n"
-"	if (!argv) {\n"
-"		fprintf(stderr, \"argv=<null>\\n\");\n"
-"	} else { \n"
-"		for (i = 0; i <= argc ; i++)\n"
-"			fprintf(stderr, \"argv[%d]=%.60s\\n\", i, argv[i] ? argv[i] : \"<null>\");\n"
-"	}\n"
-"}\n"
-"\n"
-"#endif /* DEBUGEXEC */\n"
-"\n"
-"void rmarg(char ** argv, char * arg)\n"
-"{\n"
-"	for (; argv && *argv && *argv != arg; argv++);\n"
-"	for (; argv && *argv; argv++)\n"
-"		*argv = argv[1];\n"
-"}\n"
-"\n"
-"int chkenv(int argc)\n"
-"{\n"
-"	char buff[512];\n"
-"	unsigned mask, m;\n"
-"	int l, a, c;\n"
-"	char * string;\n"
-"	extern char ** environ;\n"
-"\n"
-"	mask  = (unsigned)chkenv;\n"
-"	mask ^= (unsigned)getpid() * ~mask;\n"
-"	sprintf(buff, \"x%x\", mask);\n"
-"	string = getenv(buff);\n"
-"#ifdef DEBUGEXEC\n"
-"	fprintf(stderr, \"getenv(%s)=%s\\n\", buff, string ? string : \"<null>\");\n"
-"#endif\n"
-"	l = strlen(buff);\n"
-"	if (!string) {\n"
-"		/* 1st */\n"
-"		sprintf(&buff[l], \"=%u %d\", mask, argc);\n"
-"		putenv(strdup(buff));\n"
-"		return 0;\n"
-"	}\n"
-"	c = sscanf(string, \"%u %d%c\", &m, &a, buff);\n"
-"	if (c == 2 && m == mask) {\n"
-"		/* 3rd */\n"
-"		rmarg(environ, &string[-l - 1]);\n"
-"		return 1 + (argc - a);\n"
-"	}\n"
-"	return -1;\n"
-"}\n"
-"\n"
-"#define UNTRACEABLE	/* Define to prevent ptrace this executable */\n"
-"#ifdef UNTRACEABLE\n"
-"\n"
-"#define _LINUX_SOURCE_COMPAT\n"
-"#include <sys/ptrace.h>\n"
-"#include <sys/types.h>\n"
-"#include <sys/wait.h>\n"
-"#include <fcntl.h>\n"
-"#include <signal.h>\n"
-"#include <stdio.h>\n"
-"#include <unistd.h>\n"
-"\n"
-"void untraceable(char * argv0)\n"
-"{\n"
-"	char proc[80];\n"
-"	int pid, mine;\n"
-"\n"
-"	switch(pid = vfork()) {\n"
-"	case  0:\n"
-"		pid = getppid();\n"
-"		/* For problematic SunOS ptrace */\n"
-"		sprintf(proc, \"/proc/%d/as\", (int)pid);\n"
-"		close(0);\n"
-"		mine = !open(proc, O_RDWR|O_EXCL);\n"
-"		if (!mine && errno != EBUSY)\n"
-"			mine = !ptrace(PTRACE_ATTACH, pid, 0, 0);\n"
-"		if (mine) {\n"
-"			kill(pid, SIGCONT);\n"
-"		} else {\n"
-"			fprintf(stderr, \"%s: Being traced!\\n\", argv0);\n"
-"			kill(pid, SIGKILL);\n"
-"		}\n"
-"		_exit(mine);\n"
-"	case -1:\n"
-"		break;\n"
-"	default:\n"
-"		if (pid == waitpid(pid, 0, 0))\n"
-"			return;\n"
-"	}\n"
-"	perror(argv0);\n"
-"	_exit(1);\n"
-"}\n"
-"#endif	/* UNTRACEABLE */\n"
-"\n"
-"char * xsh(int argc, char ** argv)\n"
-"{\n"
-"	char buff[512];\n"
-"	char * scrpt;\n"
-"	int ret, i, j;\n"
-"	char ** varg;\n"
-"\n"
-"	state_0();\n"
-"	key(pswd, sizeof(pswd_t));\n"
-"	rc4(shll, sizeof(shll_t));\n"
-"	rc4(inlo, sizeof(inlo_t));\n"
-"	rc4(xecc, sizeof(xecc_t));\n"
-"	rc4(lsto, sizeof(lsto_t));\n"
-"	rc4(chk1, sizeof(chk1_t));\n"
-"	if (strcmp(TEXT_chk1, chk1))\n"
-"		return \"I have changed!\";\n"
-"	ret = chkenv(argc);\n"
-"	if (ret < 0)\n"
-"		return \"Unnormal behavior!\";\n"
-"	varg = (char **)calloc(argc + 10, sizeof(char *));\n"
-"	if (!varg)\n"
-"		return 0;\n"
-"	if (ret) {\n"
-"		if (!relax && key_with_file(shll))\n"
-"			return shll;\n"
-"		rc4(opts, sizeof(opts_t));\n"
-"		rc4(text, sizeof(text_t));\n"
-"		rc4(chk2, sizeof(chk2_t));\n"
-"		if (strcmp(TEXT_chk2, chk2))\n"
-"			return \"Shell have changed!\";\n"
-"		if (sizeof(text_t) < sizeof(hide_t)) {\n"
-"			/* Prepend spaces til a sizeof(hide_t) script size. */\n"
-"			scrpt = malloc(sizeof(hide_t));\n"
-"			if (!scrpt)\n"
-"				return 0;\n"
-"			memset(scrpt, (int) ' ', sizeof(hide_t));\n"
-"			memcpy(&scrpt[sizeof(hide_t) - sizeof(text_t)], text, sizeof(text_t));\n"
-"		} else {\n"
-"			scrpt = text;	/* Script text */\n"
-"		}\n"
-"	} else {			/* Reexecute */\n"
-"		if (*xecc) {\n"
-"			sprintf(buff, xecc, argv[0]);\n"
-"			scrpt = buff;\n"
-"		} else {\n"
-"			scrpt = argv[0];\n"
-"		}\n"
-"	}\n"
-"	j = 0;\n"
-"	varg[j++] = argv[0];		/* My own name at execution */\n"
-"	if (ret && *opts)\n"
-"		varg[j++] = opts;	/* Options on 1st line of code */\n"
-"	if (*inlo)\n"
-"		varg[j++] = inlo;	/* Option introducing inline code */\n"
-"	varg[j++] = scrpt;		/* The script itself */\n"
-"	if (*lsto)\n"
-"		varg[j++] = lsto;	/* Option meaning last option */\n"
-"	i = (ret > 1) ? ret : 0;	/* Args numbering correction */\n"
-"	while (i < argc)\n"
-"		varg[j++] = argv[i++];	/* Main run-time arguments */\n"
-"	varg[j] = 0;			/* NULL terminated array */\n"
-"#ifdef DEBUGEXEC\n"
-"	debugexec(shll, j, varg);\n"
-"#endif\n"
-"	execvp(shll, varg);\n"
-"	return shll;\n"
-"}\n"
-"\n"
-"int main(int argc, char ** argv)\n"
-"{\n"
-"#ifdef DEBUGEXEC\n"
-"	debugexec(\"main\", argc, argv);\n"
-"#endif\n"
-"#ifdef UNTRACEABLE\n"
-"	untraceable(argv[0]);\n"
-"#endif\n"
-"	if (date && (date < (long)time(NULL))) {\n"
-"		fprintf(stderr, \"%s %s\\n\", shcv, cprg);\n"
-"		fprintf(stderr, \"%s: Out of date\\n\", argv[0]);\n"
-"		fprintf(stderr, \"Contact with %s\\n\", mail);\n"
-"	} else {\n"
-"		argv[1] = xsh(argc, argv);\n"
-"		fprintf(stderr, \"%s%s%s: %s\\n\", argv[0],\n"
-"			errno ? \": \" : \"\",\n"
-"			errno ? strerror(errno) : \"\",\n"
-"			argv[1] ? argv[1] : \"<null>\"\n"
-"		);\n"
-"	}\n"
-"	return 1;\n"
-"}\n"
-;
-
-static void error(const char * type, const char * frm, ...)
-{
-	va_list ap;
-	char * frm2 = "\n";
-
-	va_start(ap, frm);
-	if (strchr(type, 's'))
-		frm2 = ": %s\n";
-	if(strchr(type, 'd') && !debuging)
-		return;
-	if(strchr(type, 'v') && !verbose)
-		return;
-
-	fprintf(stderr, "%s", my_name);
-	vfprintf(stderr, frm, ap);
-	fprintf(stderr, frm2, strerror(errno));
-
-	if (strchr(type, 'x'))
-		exit(1);
-	va_end(ap);
-}
+static const char DEBUGEXEC_line[] =
+"#define DEBUGEXEC	%d	/* Define if you want to debug execvp calls */\n";
+static int DEBUGEXEC_flag;
+static const char TRACEABLE_line[] =
+"#define TRACEABLE	%d	/* Define to enable ptrace this executable */\n";
+static int TRACEABLE_flag;
+static const char * RTC[] = {
+"",
+"/* rtc.c */",
+"",
+"#include <sys/stat.h>",
+"#include <sys/types.h>",
+"",
+"#include <errno.h>",
+"#include <stdio.h>",
+"#include <stdlib.h>",
+"#include <string.h>",
+"#include <time.h>",
+"#include <unistd.h>",
+"",
+"/**",
+" * 'Alleged RC4' Source Code picked up from the news.",
+" * From: allen@gateway.grumman.com (John L. Allen)",
+" * Newsgroups: comp.lang.c",
+" * Subject: Shrink this C code for fame and fun",
+" * Date: 21 May 1996 10:49:37 -0400",
+" */",
+"",
+"static unsigned char state[256], indx, jndx;",
+"",
+"/*",
+" * Reset rc4 state. ",
+" */",
+"void state_0(void)",
+"{",
+"	indx = jndx = 0;",
+"	do {",
+"		state[indx] = indx;",
+"	} while (++indx);",
+"}",
+"",
+"/*",
+" * Set key. Can be used more than once. ",
+" */",
+"void key(char * str, int len)",
+"{",
+"	unsigned char tmp, * ptr = (unsigned char *)str;",
+"	while (len > 0) {",
+"		do {",
+"			tmp = state[indx];",
+"			jndx += tmp;",
+"			jndx += ptr[(int)indx % len];",
+"			state[indx] = state[jndx];",
+"			state[jndx] = tmp;",
+"		} while (++indx);",
+"		ptr += 256;",
+"		len -= 256;",
+"	}",
+"}",
+"",
+"/*",
+" * Crypt data. ",
+" */",
+"void rc4(char * str, int len)",
+"{",
+"	unsigned char tmp, * ptr = (unsigned char *)str;",
+"	jndx = 0;",
+"	while (len > 0) {",
+"		indx++;",
+"		tmp = state[indx];",
+"		jndx += tmp;",
+"		state[indx] = state[jndx];",
+"		state[jndx] = tmp;",
+"		tmp += state[indx];",
+"		*ptr ^= state[tmp];",
+"		ptr++;",
+"		len--;",
+"	}",
+"}",
+"",
+"/*",
+" * Key with file invariants. ",
+" */",
+"int key_with_file(char * file)",
+"{",
+"	struct stat statf[1];",
+"	struct stat control[1];",
+"",
+"	if (stat(file, statf) < 0)",
+"		return -1;",
+"",
+"	/* Turn on stable fields */",
+"	memset(control, 0, sizeof(control));",
+"	control->st_ino = statf->st_ino;",
+"	control->st_dev = statf->st_dev;",
+"	control->st_rdev = statf->st_rdev;",
+"	control->st_uid = statf->st_uid;",
+"	control->st_gid = statf->st_gid;",
+"	control->st_size = statf->st_size;",
+"	control->st_mtime = statf->st_mtime;",
+"	control->st_ctime = statf->st_ctime;",
+"	key((char *)control, sizeof(control));",
+"	return 0;",
+"}",
+"",
+"#if DEBUGEXEC",
+"void debugexec(char * shll, int argc, char ** argv)",
+"{",
+"	int i;",
+"	fprintf(stderr, \"shll=%s\\n\", shll ? shll : \"<null>\");",
+"	fprintf(stderr, \"argc=%d\\n\", argc);",
+"	if (!argv) {",
+"		fprintf(stderr, \"argv=<null>\\n\");",
+"	} else { ",
+"		for (i = 0; i <= argc ; i++)",
+"			fprintf(stderr, \"argv[%d]=%.60s\\n\", i, argv[i] ? argv[i] : \"<null>\");",
+"	}",
+"}",
+"#endif /* DEBUGEXEC */",
+"",
+"void rmarg(char ** argv, char * arg)",
+"{",
+"	for (; argv && *argv && *argv != arg; argv++);",
+"	for (; argv && *argv; argv++)",
+"		*argv = argv[1];",
+"}",
+"",
+"int chkenv(int argc)",
+"{",
+"	char buff[512];",
+"	unsigned mask, m;",
+"	int l, a, c;",
+"	char * string;",
+"	extern char ** environ;",
+"",
+"	mask  = (unsigned)chkenv;",
+"	mask ^= (unsigned)getpid() * ~mask;",
+"	sprintf(buff, \"x%x\", mask);",
+"	string = getenv(buff);",
+"#if DEBUGEXEC",
+"	fprintf(stderr, \"getenv(%s)=%s\\n\", buff, string ? string : \"<null>\");",
+"#endif",
+"	l = strlen(buff);",
+"	if (!string) {",
+"		/* 1st */",
+"		sprintf(&buff[l], \"=%u %d\", mask, argc);",
+"		putenv(strdup(buff));",
+"		return 0;",
+"	}",
+"	c = sscanf(string, \"%u %d%c\", &m, &a, buff);",
+"	if (c == 2 && m == mask) {",
+"		/* 3rd */",
+"		rmarg(environ, &string[-l - 1]);",
+"		return 1 + (argc - a);",
+"	}",
+"	return -1;",
+"}",
+"",
+"#if !TRACEABLE",
+"",
+"#define _LINUX_SOURCE_COMPAT",
+"#include <sys/ptrace.h>",
+"#include <sys/types.h>",
+"#include <sys/wait.h>",
+"#include <fcntl.h>",
+"#include <signal.h>",
+"#include <stdio.h>",
+"#include <unistd.h>",
+"",
+"void untraceable(char * argv0)",
+"{",
+"	char proc[80];",
+"	int pid, mine;",
+"",
+"	switch(pid = vfork()) {",
+"	case  0:",
+"		pid = getppid();",
+"		/* For problematic SunOS ptrace */",
+"		sprintf(proc, \"/proc/%d/as\", (int)pid);",
+"		close(0);",
+"		mine = !open(proc, O_RDWR|O_EXCL);",
+"		if (!mine && errno != EBUSY)",
+"			mine = !ptrace(PTRACE_ATTACH, pid, 0, 0);",
+"		if (mine) {",
+"			kill(pid, SIGCONT);",
+"		} else {",
+"			fprintf(stderr, \"%s: Being traced!\\n\", argv0);",
+"			kill(pid, SIGKILL);",
+"		}",
+"		_exit(mine);",
+"	case -1:",
+"		break;",
+"	default:",
+"		if (pid == waitpid(pid, 0, 0))",
+"			return;",
+"	}",
+"	perror(argv0);",
+"	_exit(1);",
+"}",
+"#endif /* !TRACEABLE */",
+"",
+"char * xsh(int argc, char ** argv)",
+"{",
+"	char buff[512];",
+"	char * scrpt;",
+"	int ret, i, j;",
+"	char ** varg;",
+"",
+"	state_0();",
+"	key(pswd, sizeof(pswd_t));",
+"	rc4(shll, sizeof(shll_t));",
+"	rc4(inlo, sizeof(inlo_t));",
+"	rc4(xecc, sizeof(xecc_t));",
+"	rc4(lsto, sizeof(lsto_t));",
+"	rc4(chk1, sizeof(chk1_t));",
+"	if (strcmp(TEXT_chk1, chk1))",
+"		return \"I have changed!\";",
+"	ret = chkenv(argc);",
+"	if (ret < 0)",
+"		return \"Unnormal behavior!\";",
+"	varg = (char **)calloc(argc + 10, sizeof(char *));",
+"	if (!varg)",
+"		return 0;",
+"	if (ret) {",
+"		if (!relax && key_with_file(shll))",
+"			return shll;",
+"		rc4(opts, sizeof(opts_t));",
+"		rc4(text, sizeof(text_t));",
+"		rc4(chk2, sizeof(chk2_t));",
+"		if (strcmp(TEXT_chk2, chk2))",
+"			return \"Shell have changed!\";",
+"		if (sizeof(text_t) < sizeof(hide_t)) {",
+"			/* Prepend spaces til a sizeof(hide_t) script size. */",
+"			scrpt = malloc(sizeof(hide_t));",
+"			if (!scrpt)",
+"				return 0;",
+"			memset(scrpt, (int) ' ', sizeof(hide_t));",
+"			memcpy(&scrpt[sizeof(hide_t) - sizeof(text_t)], text, sizeof(text_t));",
+"		} else {",
+"			scrpt = text;	/* Script text */",
+"		}",
+"	} else {			/* Reexecute */",
+"		if (*xecc) {",
+"			sprintf(buff, xecc, argv[0]);",
+"			scrpt = buff;",
+"		} else {",
+"			scrpt = argv[0];",
+"		}",
+"	}",
+"	j = 0;",
+"	varg[j++] = argv[0];		/* My own name at execution */",
+"	if (ret && *opts)",
+"		varg[j++] = opts;	/* Options on 1st line of code */",
+"	if (*inlo)",
+"		varg[j++] = inlo;	/* Option introducing inline code */",
+"	varg[j++] = scrpt;		/* The script itself */",
+"	if (*lsto)",
+"		varg[j++] = lsto;	/* Option meaning last option */",
+"	i = (ret > 1) ? ret : 0;	/* Args numbering correction */",
+"	while (i < argc)",
+"		varg[j++] = argv[i++];	/* Main run-time arguments */",
+"	varg[j] = 0;			/* NULL terminated array */",
+"#if DEBUGEXEC",
+"	debugexec(shll, j, varg);",
+"#endif",
+"	execvp(shll, varg);",
+"	return shll;",
+"}",
+"",
+"int main(int argc, char ** argv)",
+"{",
+"#if DEBUGEXEC",
+"	debugexec(\"main\", argc, argv);",
+"#endif",
+"#if !TRACEABLE",
+"	untraceable(argv[0]);",
+"#endif",
+"	if (date && (date < (long)time(NULL))) {",
+"		fprintf(stderr, \"%s %s\\n\", shcv, cprg);",
+"		fprintf(stderr, \"%s: Out of date\\n\", argv[0]);",
+"		fprintf(stderr, \"Contact with %s\\n\", mail);",
+"	} else {",
+"		argv[1] = xsh(argc, argv);",
+"		fprintf(stderr, \"%s%s%s: %s\\n\", argv[0],",
+"			errno ? \": \" : \"\",",
+"			errno ? strerror(errno) : \"\",",
+"			argv[1] ? argv[1] : \"<null>\"",
+"		);",
+"	}",
+"	return 1;",
+"}",
+0};
 
 static int parse_an_arg(int argc, char * argv[])
 {
 	extern char * optarg;
-	const char * opts = "e:m:f:i:x:l:rvCAh";
-	const char * nvv_fmt = " parse(-%c %s): Not a valid value";
+	const char * opts = "e:m:f:i:x:l:rvDTCAh";
 	struct tm tmp[1];
-	int cnt;
+	int cnt, l;
 	char ctrl;
 
 	switch (getopt(argc, argv, opts)) {
@@ -429,7 +413,8 @@ static int parse_an_arg(int argc, char * argv[])
 			date = (long)mktime(tmp);
 		}
 		if (cnt != 3 || date == -1) {
-			error("", nvv_fmt, 'x', optarg);
+			fprintf(stderr, "%s parse(-e %s): Not a valid value\n",
+				my_name,  optarg);
 			return -1;
 		}
 		break;
@@ -438,7 +423,8 @@ static int parse_an_arg(int argc, char * argv[])
 		break;
 	case 'f':
 		if (file) {
-			error("", " parse(-f): Specified more than once");
+			fprintf(stderr, "%s parse(-f): Specified more than once\n",
+				my_name);
 			return -1;
 		}
 		file = optarg;
@@ -458,39 +444,52 @@ static int parse_an_arg(int argc, char * argv[])
 	case 'v':
 		verbose++;
 		break;
+	case 'D':
+		DEBUGEXEC_flag = 1;
+		break;
+	case 'T':
+		TRACEABLE_flag = 1;
+		break;
 	case 'C':
-		error("", " %s, %s", version, subject);
-		error("", " %s %s %s %s", cpright, author.f, author.s, author.e);
-		error("", " %s", copying);
+		fprintf(stderr, "%s %s, %s\n", my_name, version, subject);
+		fprintf(stderr, "%s %s %s %s %s\n", my_name, cpright, author.f, author.s, author.e);
+		fprintf(stderr, "%s ", my_name);
+		for (l = 0; copying[l]; l++)
+			fprintf(stderr, "%s\n", copying[l]);
+		fprintf(stderr, "    %s %s %s\n\n", author.f, author.s, author.e);
 		exit(0);
 		break;
 	case 'A':
-		error("", " %s, %s", version, subject);
-		error("", " %s %s %s %s", cpright, author.f, author.s, author.e);
-		error("", " %s", abstract);
+		fprintf(stderr, "%s %s, %s\n", my_name, version, subject);
+		fprintf(stderr, "%s %s %s %s %s\n", my_name, cpright, author.f, author.s, author.e);
+		fprintf(stderr, "%s ", my_name);
+		for (l = 0; abstract[l]; l++)
+			fprintf(stderr, "%s\n", abstract[l]);
 		exit(0);
 		break;
 	case 'h':
-		error("", " %s, %s", version, subject);
-		error("", " %s %s %s %s", cpright, author.f, author.s, author.e);
-		error("", " %s%s", usage, help);
+		fprintf(stderr, "%s %s, %s\n", my_name, version, subject);
+		fprintf(stderr, "%s %s %s %s %s\n", my_name, cpright, author.f, author.s, author.e);
+		fprintf(stderr, "%s %s\n", my_name, usage);
+		for (l = 0; help[l]; l++)
+			fprintf(stderr, "%s\n", help[l]);
 		exit(0);
 		break;
 	case -1:
 		if (!file) {
-			error("", " parse(-f): No specified");
+			fprintf(stderr, "%s parse(-f): No specified\n", my_name);
 			file = "";
 			return -1;
 		}
 		return 0;
 	case ':':
-		error("", " parse: Missing parameter");
+		fprintf(stderr, "%s parse: Missing parameter\n", my_name);
 		return -1;
 	case '?':
-		error("", " parse: Unknown option");
+		fprintf(stderr, "%s parse: Unknown option\n", my_name);
 		return -1;
 	default:
-		error("", " parse: Unknown return");
+		fprintf(stderr, "%s parse: Unknown return\n", my_name);
 		return -1;
 	}
 	return 1;
@@ -501,19 +500,23 @@ static void parse_args(int argc, char * argv[])
 	int err = 0;
 	int ret;
 
+#if 0
 	my_name = strrchr(argv[0], '/');
 	if (my_name)
 		my_name++;
 	else
 		my_name = argv[0];
+#endif
 
 	do {
 		ret = parse_an_arg(argc, argv);
 		if (ret == -1)
 			err++;
 	} while (ret);
-	if (err)
-		error("x", " %s", usage);
+	if (err) {
+		fprintf(stderr, "\n%s %s\n\n", my_name, usage);
+		exit(1);
+	}
 }
 
 /**
@@ -524,7 +527,7 @@ static void parse_args(int argc, char * argv[])
  * Date: 21 May 1996 10:49:37 -0400
  */
 
-static unsigned char state[256], * ptr, indx, jndx, tmp;
+static unsigned char state[256], indx, jndx;
 
 /*
  * Reset rc4 state. 
@@ -542,7 +545,7 @@ void state_0(void)
  */
 void key(char * str, int len)
 {
-	ptr = (unsigned char *)str;
+	unsigned char tmp, * ptr = (unsigned char *)str;
 	while (len > 0) {
 		do {
 			tmp = state[indx];
@@ -561,7 +564,7 @@ void key(char * str, int len)
  */
 void rc4(char * str, int len)
 {
-	ptr = (unsigned char *)str;
+	unsigned char tmp, * ptr = (unsigned char *)str;
 	jndx = 0;
 	while (len > 0) {
 		indx++;
@@ -613,15 +616,15 @@ struct {
 } shellsDB[] = {
 	{ "perl", "-e", "--", "exec('%s',@ARGV);" },
 	{ "rc",   "-c", "",   "builtin exec %s $*" },
-	{ "sh",   "-c", "",   "exec %s \"$@\"" }, /* IRIX_nvi */
-	{ "bash", "-c", "--", "exec %s \"$@\"" },
-	{ "bsh",  "-c", "",   "exec %s \"$@\"" }, /* AIX_nvi */
-	{ "Rsh",  "-c", "",   "exec %s \"$@\"" }, /* AIX_nvi */
-	{ "ksh",  "-c", "--", "exec %s \"$@\"" },
-	{ "tsh",  "-c", "--", "exec %s \"$@\"" }, /* AIX */
-	{ "ash",  "-c", "--", "exec %s \"$@\"" }, /* Linux */
-	{ "csh",  "-c", "-b", "exec %s $argv" }, /* AIX: No file for $0 */
-	{ "tcsh", "-c", "-b", "exec %s $argv" },
+	{ "sh",   "-c", "",   "exec '%s' \"$@\"" }, /* IRIX_nvi */
+	{ "bash", "-c", "",   "exec '%s' \"$@\"" },
+	{ "bsh",  "-c", "",   "exec '%s' \"$@\"" }, /* AIX_nvi */
+	{ "Rsh",  "-c", "",   "exec '%s' \"$@\"" }, /* AIX_nvi */
+	{ "ksh",  "-c", "--", "exec '%s' \"$@\"" },
+	{ "tsh",  "-c", "--", "exec '%s' \"$@\"" }, /* AIX */
+	{ "ash",  "-c", "--", "exec '%s' \"$@\"" }, /* Linux */
+	{ "csh",  "-c", "-b", "exec '%s' $argv" }, /* AIX: No file for $0 */
+	{ "tcsh", "-c", "-b", "exec '%s' $argv" },
 	{ NULL,   NULL, NULL, NULL },
 };
 
@@ -646,7 +649,7 @@ int eval_shell(char * text)
 	*opts = '\0';
 	i = sscanf(ptr, " #!%s%s %c", shll, opts, opts);
 	if (i < 1 || i > 2) {
-		error("", " Invalid script's first line: %s", ptr);
+		fprintf(stderr, "%s Invalid script's first line: %s\n", my_name, ptr);
 		return -1;
 	}
 	free(ptr);
@@ -655,7 +658,7 @@ int eval_shell(char * text)
 	ptr  = strrchr(shll, (int)'/');
 	if (*ptr == '/')
 		ptr++;
-	error("v", " shll=%s", ptr);
+	if (verbose) fprintf(stderr, "%s shll=%s\n", my_name, ptr);
 
 	for(i=0; shellsDB[i].shll; i++) {
 		if(!strcmp(ptr, shellsDB[i].shll)) {
@@ -668,22 +671,22 @@ int eval_shell(char * text)
 		}
 	}
 	if (!inlo || !xecc || !lsto) {
-		error("", " Unknown shell (%s): specify [-i][-x][-l]", ptr);
+		fprintf(stderr, "%s Unknown shell (%s): specify [-i][-x][-l]\n", my_name, ptr);
 		return -1;
 	}
-	error("v", " [-i]=%s", inlo);
-	error("v", " [-x]=%s", xecc);
-	error("v", " [-l]=%s", lsto);
+	if (verbose) fprintf(stderr, "%s [-i]=%s\n", my_name, inlo);
+	if (verbose) fprintf(stderr, "%s [-x]=%s\n", my_name, xecc);
+	if (verbose) fprintf(stderr, "%s [-l]=%s\n", my_name, lsto);
 
 	opts = realloc(opts, strlen(opts) + 1);
 	if (*opts && !strcmp(opts, lsto)) {
-		error("", " opts=%s : Is equal to [-l]. Removing opts", opts);
+		fprintf(stderr, "%s opts=%s : Is equal to [-l]. Removing opts\n", my_name, opts);
 		*opts = '\0';
 	} else if (!strcmp(opts, "-")) {
-		error("", " opts=%s : No real one. Removing opts", opts);
+		fprintf(stderr, "%s opts=%s : No real one. Removing opts\n", my_name, opts);
 		*opts = '\0';
 	}
-	error("v", " opts=%s", opts);
+	if (verbose) fprintf(stderr, "%s opts=%s\n", my_name, opts);
 	return 0;
 }
 
@@ -725,7 +728,7 @@ int noise(char * ptr, int min, int xtra)
 	return xtra;
 }
 
-void print_str(FILE * o, char * ptr, int l, int n)
+void print_bytes(FILE * o, char * ptr, int l, int n)
 {
 	int i;
 
@@ -740,18 +743,18 @@ void print_str(FILE * o, char * ptr, int l, int n)
 		fprintf(o, "\"");
 }
 
-void print_data(FILE * o, char * ptr, char * name, int l)
+void print_array(FILE * o, char * ptr, char * name, int l)
 {
 	fprintf(o, "typedef char %s_t[%d];\n", name, l);
 	fprintf(o, "static  char %s[] = ", name);
-	print_str(o, ptr, l, l + (rand() & 0xf));
+	print_bytes(o, ptr, l, l + (rand() & 0xf));
 	fprintf(o, ";\n");
 }
 
-void dump_data(FILE * o, char * ptr, char * name, int l)
+void dump_array(FILE * o, char * ptr, char * name, int l)
 {
 	rc4(ptr, l);
-	print_data(o, ptr, name, l);
+	print_array(o, ptr, name, l);
 }
 
 int write_C(char * file)
@@ -772,23 +775,29 @@ int write_C(char * file)
 	fprintf(o, "static  char mail[] = \"%s\";\n", mail);
 	fprintf(o, "static  int  relax = %d;\n", relax);
 	l = noise(buf, 256, 256);
-	dump_data(o, buf, "pswd", l);
+	dump_array(o, buf, "pswd", l);
 	state_0();
 	key(buf, l);
-	dump_data(o, strdup(shll), "shll", strlen(shll) + 1);
-	dump_data(o, inlo, "inlo", strlen(inlo) + 1);
-	dump_data(o, xecc, "xecc", strlen(xecc) + 1);
-	dump_data(o, lsto, "lsto", strlen(lsto) + 1);
+	dump_array(o, strdup(shll), "shll", strlen(shll) + 1);
+	dump_array(o, inlo, "inlo", strlen(inlo) + 1);
+	dump_array(o, xecc, "xecc", strlen(xecc) + 1);
+	dump_array(o, lsto, "lsto", strlen(lsto) + 1);
 	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk1", author.f);
-	dump_data(o, strdup(author.f), "chk1", 10);
-	if (!relax && key_with_file(shll))
-		error("sx", " Invalid file name: %s", shll);
-	dump_data(o, opts, "opts", strlen(opts) + 1);
-	dump_data(o, text, "text", strlen(text) + 1);
+	dump_array(o, strdup(author.f), "chk1", 10);
+	if (!relax && key_with_file(shll)) {
+		fprintf(stderr, "%s Invalid file name: %s", my_name, shll);
+		perror("");
+		exit(1);
+	}
+	dump_array(o, opts, "opts", strlen(opts) + 1);
+	dump_array(o, text, "text", strlen(text) + 1);
 	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk2", author.s);
-	dump_data(o, strdup(author.s), "chk2", 8);
-	fprintf(o, "typedef char %s_t[%d];\n", "hide", 1<<12);
-	fprintf(o, "%s", RTC);
+	dump_array(o, strdup(author.s), "chk2", 8);
+	fprintf(o, "typedef char %s_t[%d];\n\n", "hide", 1<<12);
+	fprintf(o, DEBUGEXEC_line, DEBUGEXEC_flag);
+	fprintf(o, TRACEABLE_line, TRACEABLE_flag);
+	for (l = 0; RTC[l]; l++)
+		fprintf(o, "%s\n", RTC[l]);
 	fflush(o);
 	fclose(o);
 	return 0;
@@ -806,13 +815,14 @@ int make(void)
 	if (!cflags)
 		cflags = "";
 	sprintf(cmd, "%s %s %s.x.c -o %s.x", cc, cflags, file, file);
-	error("v", ": %s", cmd);
+	if (verbose) fprintf(stderr, "%s: %s\n", my_name, cmd);
 	if (system(cmd))
 		return -1;
 	sprintf(cmd, "strip %s.x", file);
-	error("v", ": %s", cmd);
+	if (verbose) fprintf(stderr, "%s: %s\n", my_name, cmd);
 	if (system(cmd))
-		error("", ": It does not matter");
+		fprintf(stderr, "%s: It does not matter\n", my_name);
+
 	return 0;
 }
 

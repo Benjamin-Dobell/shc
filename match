@@ -19,3 +19,6 @@ do
   done
 done
 
+# Added
+echo "[$$] PAUSED... Hit return!"
+read DUMMY
