@@ -1,4 +1,4 @@
-.TH  shc 1  "Nov 20, 1991" "shc Version 2.4"
+.TH  shc 1  "Oct 14, 1997" "shc Version 3.0"
 .UC 4
 
 .SH NAME
@@ -31,8 +31,8 @@ You can compile whatever interpreted script, but you must supply valid
 
 If you look it closer you will find that \fBshc\fP really not makes an
 independent executable because it remains needing /bin/sh.
-It performs compression and random sort of the script, and on execution
-uncompress and sh'xcutes itself with the \fI-c\fP option adding the date
+It performs encription of the script, and on execution
+desencripts and sh'xcutes itself with the \fI-c\fP option adding the date
 expire capability.
 
 Perhaps you think it is not a compiler, but it "compiles" a script,
@@ -49,7 +49,7 @@ Of course it is not absolutelly safe but it will.
 The command line options are:
 .TP
 .B -e date
-Expiration date in mm/dd/yy format [NO]
+Expiration date in dd/mm/yyyy format [NO]
 .TP
 .B -m email_dir
 e-Mail address to contact with at expiration [your provider]
@@ -65,6 +65,9 @@ eXec command, as a printf format i.e: exec(\\\\'%s\\\\',@ARGV);
 .TP
 .B -l last_option
 Last option i.e: --
+.TP
+.B -r relax security
+Force a relaxed security. Make a redistributable binary.
 .TP
 .B -v   
 Verbose

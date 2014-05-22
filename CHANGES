@@ -1,0 +1,57 @@
+CHANGES
+
+3.1	Tue Feb 16 21:36:59 CET 1999
+
+	Fixed a misbehavior on scripts with a in-frist-line option
+	equal to "end of options" (i.e.  #!/bin/sh -- )
+	(Thanks to Bernard Blundell <blundell@lts.sel.alcatel.de>)
+
+	Stupid GCC "warning: return type of `main' is not `int'" removed.
+
+
+
+3.0	Tue Oct 14 14:20:52 MET DST 1997
+
+	Added a new option "-r" to force a relaxed security and
+	so make a redistributable binary.
+
+	Modified expiration day format. Now is dd/mm/yyyy.
+
+
+
+3.0b3	Fri Jun  6 22:09:05 WET DST 1997
+
+	Yet other few bugs fixed.
+	Output format simplified.
+	-pedantic compilation.
+
+
+
+3.0b2	Tue Jun  3 17:51:51 GMT 1997
+
+	Some explicit type conversions removed.
+
+	Fixed the bug "END_OF_FILE" when compiling the generated code.
+A flush is needed before a pclose.
+
+	st_blksize and st_blocks struct stat fields does not exist on
+SCO, both not used now.
+
+
+
+3.0b1	Wed Feb 26 14:27:22 WET 1997
+
+	The main difference with 2.4 is that in it the script was
+compressed an then shuffle around, now int 3.0 the script is encripted
+with an inline code, so not needend any external comand to work, and been
+faster at startup. Other related adventage is that the only information
+not encripted in .x.c is an stamp, expiration date and provider email
+address.
+
+	Something equivalent to cheksums have been used to enforced at
+execution that the executing shell have not been modified from the time
+the script was compiled. If anybody tries to change the excuting shell,
+.x will refuse to execute.
+
+	The generated .x.c source code is now readable.
+
