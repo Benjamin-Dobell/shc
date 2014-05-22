@@ -1,5 +1,31 @@
 CHANGES
 
+3.8.3	Tue Jun 28 21:29:06 CEST 2005
+
+	Thanks to Jacek Kalinski <jacek@dyski.one.pl> for:
+	- Fixed bug: "vfork" fails on multiprocessor systems.
+
+
+3.8.2	Thu Jun 16 17:15:59 CEST 2005
+
+	Thanks to Arjen Visser <arjen.visser@avisit.co.nz> for:
+	- Fixed bug: "rlax" used after encryption.
+
+	Thanks to Nalneesh Gaur <Nalneesh.Gaur@accenture.com> for:
+	- Read permision of the script.x exposes it to disassembling.
+	- Group and others read permision is now removed by default.
+
+
+
+3.8	Thu Nov  4 20:33:52 CET 2004
+
+	Fixed incorrect implementation on rc4.
+	Hidden all the binary executable symbols but one.
+	Expiration date and most strings are encrypted too.
+	All the encrypted payload is now randomized.
+
+
+
 3.7	Wed Jun 18 16:32:26 CEST 2003
 
 	Thanks to Philipp Koller <philipp@open.ch> for:

@@ -7,9 +7,9 @@
  * The copyright notice does not apply to that code.
  */
 static const char my_name[] = "shc";
-static const char version[] = "Version 3.7";
+static const char version[] = "Version 3.8.3";
 static const char subject[] = "Generic Script Compiler";
-static const char cpright[] = "Copyright (c) 1994-2003";
+static const char cpright[] = "Copyright (c) 1994-2005";
 static const struct { const char * f, * s, * e; }
 	author = { "Francisco", "Rosales", "<frosal@fi.upm.es>" };
 
@@ -95,9 +95,9 @@ static const char * help[] = {
 #define SIZE 4096
 
 static char * file;
-static long date;
+static double date[1];
 static char * mail = "Please contact your provider";
-static int relax;
+static char   rlax[1];
 static char * shll;
 static char * inlo;
 static char * xecc;
@@ -111,6 +111,7 @@ static int DEBUGEXEC_flag;
 static const char TRACEABLE_line[] =
 "#define TRACEABLE	%d	/* Define as 1 to enable ptrace the executable */\n";
 static int TRACEABLE_flag;
+
 static const char * RTC[] = {
 "",
 "/* rtc.c */",
@@ -133,32 +134,32 @@ static const char * RTC[] = {
 " * Date: 21 May 1996 10:49:37 -0400",
 " */",
 "",
-"static unsigned char state[256], indx, jndx;",
+"static unsigned char stte[256], indx, jndx, kndx;",
 "",
 "/*",
-" * Reset rc4 state. ",
+" * Reset arc4 stte. ",
 " */",
-"void state_0(void)",
+"void stte_0(void)",
 "{",
-"	indx = jndx = 0;",
+"	indx = jndx = kndx = 0;",
 "	do {",
-"		state[indx] = indx;",
+"		stte[indx] = indx;",
 "	} while (++indx);",
 "}",
 "",
 "/*",
 " * Set key. Can be used more than once. ",
 " */",
-"void key(char * str, int len)",
+"void key(void * str, int len)",
 "{",
 "	unsigned char tmp, * ptr = (unsigned char *)str;",
 "	while (len > 0) {",
 "		do {",
-"			tmp = state[indx];",
-"			jndx += tmp;",
-"			jndx += ptr[(int)indx % len];",
-"			state[indx] = state[jndx];",
-"			state[jndx] = tmp;",
+"			tmp = stte[indx];",
+"			kndx += tmp;",
+"			kndx += ptr[(int)indx % len];",
+"			stte[indx] = stte[kndx];",
+"			stte[kndx] = tmp;",
 "		} while (++indx);",
 "		ptr += 256;",
 "		len -= 256;",
@@ -168,18 +169,17 @@ static const char * RTC[] = {
 "/*",
 " * Crypt data. ",
 " */",
-"void rc4(char * str, int len)",
+"void arc4(void * str, int len)",
 "{",
 "	unsigned char tmp, * ptr = (unsigned char *)str;",
-"	jndx = 0;",
 "	while (len > 0) {",
 "		indx++;",
-"		tmp = state[indx];",
+"		tmp = stte[indx];",
 "		jndx += tmp;",
-"		state[indx] = state[jndx];",
-"		state[jndx] = tmp;",
-"		tmp += state[indx];",
-"		*ptr ^= state[tmp];",
+"		stte[indx] = stte[jndx];",
+"		stte[jndx] = tmp;",
+"		tmp += stte[indx];",
+"		*ptr ^= stte[tmp];",
 "		ptr++;",
 "		len--;",
 "	}",
@@ -206,7 +206,7 @@ static const char * RTC[] = {
 "	control->st_size = statf->st_size;",
 "	control->st_mtime = statf->st_mtime;",
 "	control->st_ctime = statf->st_ctime;",
-"	key((char *)control, sizeof(control));",
+"	key(control, sizeof(control));",
 "	return 0;",
 "}",
 "",
@@ -279,7 +279,7 @@ static const char * RTC[] = {
 "	char proc[80];",
 "	int pid, mine;",
 "",
-"	switch(pid = vfork()) {",
+"	switch(pid = fork()) {",
 "	case  0:",
 "		pid = getppid();",
 "		/* For problematic SunOS ptrace */",
@@ -291,7 +291,8 @@ static const char * RTC[] = {
 "		if (mine) {",
 "			kill(pid, SIGCONT);",
 "		} else {",
-"			fprintf(stderr, \"%s is being traced!\\n\", argv0);",
+/*"			fprintf(stderr, \"%s is being traced!\\n\", argv0);",*/
+"			perror(argv0);",
 "			kill(pid, SIGKILL);",
 "		}",
 "		_exit(mine);",
@@ -308,48 +309,59 @@ static const char * RTC[] = {
 "",
 "char * xsh(int argc, char ** argv)",
 "{",
-"	char buff[512];",
 "	char * scrpt;",
 "	int ret, i, j;",
 "	char ** varg;",
 "",
-"	state_0();",
-"	key(pswd, sizeof(pswd_t));",
-"	rc4(shll, sizeof(shll_t));",
-"	rc4(inlo, sizeof(inlo_t));",
-"	rc4(xecc, sizeof(xecc_t));",
-"	rc4(lsto, sizeof(lsto_t));",
-"	rc4(chk1, sizeof(chk1_t));",
-"	if (strcmp(TEXT_chk1, chk1))",
-"		return \"location has changed!\";",
+"	stte_0();",
+"	 key(pswd, pswd_z);",
+"	arc4(msg1, msg1_z);",
+"	arc4(date, date_z);",
+"	if (date[0] && date[0]<time(NULL))",
+"		return msg1;",
+"	arc4(shll, shll_z);",
+"	arc4(inlo, inlo_z);",
+"	arc4(xecc, xecc_z);",
+"	arc4(lsto, lsto_z);",
+"	arc4(tst1, tst1_z);",
+"	 key(tst1, tst1_z);",
+"	arc4(chk1, chk1_z);",
+"	if ((chk1_z != tst1_z) || memcmp(tst1, chk1, tst1_z))",
+"		return tst1;",
 "	ret = chkenv(argc);",
+"	arc4(msg2, msg2_z);",
 "	if (ret < 0)",
-"		return \"abnormal behavior!\";",
+"		return msg2;",
 "	varg = (char **)calloc(argc + 10, sizeof(char *));",
 "	if (!varg)",
 "		return 0;",
 "	if (ret) {",
-"		if (!relax && key_with_file(shll))",
+"		arc4(rlax, rlax_z);",
+"		if (!rlax[0] && key_with_file(shll))",
 "			return shll;",
-"		rc4(opts, sizeof(opts_t));",
-"		rc4(text, sizeof(text_t));",
-"		rc4(chk2, sizeof(chk2_t));",
-"		if (strcmp(TEXT_chk2, chk2))",
-"			return \"shell has changed!\";",
-"		if (sizeof(text_t) < sizeof(hide_t)) {",
-"			/* Prepend spaces til a sizeof(hide_t) script size. */",
-"			scrpt = malloc(sizeof(hide_t));",
+"		arc4(opts, opts_z);",
+"		arc4(text, text_z);",
+"		arc4(tst2, tst2_z);",
+"		 key(tst2, tst2_z);",
+"		arc4(chk2, chk2_z);",
+"		if ((chk2_z != tst2_z) || memcmp(tst2, chk2, tst2_z))",
+"			return tst2;",
+"		if (text_z < hide_z) {",
+"			/* Prepend spaces til a hide_z script size. */",
+"			scrpt = malloc(hide_z);",
 "			if (!scrpt)",
 "				return 0;",
-"			memset(scrpt, (int) ' ', sizeof(hide_t));",
-"			memcpy(&scrpt[sizeof(hide_t) - sizeof(text_t)], text, sizeof(text_t));",
+"			memset(scrpt, (int) ' ', hide_z);",
+"			memcpy(&scrpt[hide_z - text_z], text, text_z);",
 "		} else {",
 "			scrpt = text;	/* Script text */",
 "		}",
 "	} else {			/* Reexecute */",
 "		if (*xecc) {",
-"			sprintf(buff, xecc, argv[0]);",
-"			scrpt = buff;",
+"			scrpt = malloc(512);",
+"			if (!scrpt)",
+"				return 0;",
+"			sprintf(scrpt, xecc, argv[0]);",
 "		} else {",
 "			scrpt = argv[0];",
 "		}",
@@ -382,17 +394,12 @@ static const char * RTC[] = {
 "#if !TRACEABLE",
 "	untraceable(argv[0]);",
 "#endif",
-"	if (date && (date < (long)time(NULL))) {",
-"		fprintf(stderr, \"%s has expired!\\n\", argv[0]);",
-"		fprintf(stderr, \"%s\\n\", mail);",
-"	} else {",
-"		argv[1] = xsh(argc, argv);",
-"		fprintf(stderr, \"%s%s%s: %s\\n\", argv[0],",
-"			errno ? \": \" : \"\",",
-"			errno ? strerror(errno) : \"\",",
-"			argv[1] ? argv[1] : \"<null>\"",
-"		);",
-"	}",
+"	argv[1] = xsh(argc, argv);",
+"	fprintf(stderr, \"%s%s%s: %s\\n\", argv[0],",
+"		errno ? \": \" : \"\",",
+"		errno ? strerror(errno) : \"\",",
+"		argv[1] ? argv[1] : \"<null>\"",
+"	);",
 "	return 1;",
 "}",
 0};
@@ -413,9 +420,9 @@ static int parse_an_arg(int argc, char * argv[])
 		if (cnt == 3) {
 			tmp->tm_mon--;
 			tmp->tm_year -= 1900;
-			date = (long)mktime(tmp);
+			date[0] = mktime(tmp);
 		}
-		if (cnt != 3 || date == -1) {
+		if (cnt != 3 || date[0] <= 0) {
 			fprintf(stderr, "%s parse(-e %s): Not a valid value\n",
 				my_name,  optarg);
 			return -1;
@@ -442,7 +449,7 @@ static int parse_an_arg(int argc, char * argv[])
 		lsto = optarg;
 		break;
 	case 'r':
-		relax++;
+		rlax[0]++;
 		break;
 	case 'v':
 		verbose++;
@@ -530,32 +537,32 @@ static void parse_args(int argc, char * argv[])
  * Date: 21 May 1996 10:49:37 -0400
  */
 
-static unsigned char state[256], indx, jndx;
+static unsigned char stte[256], indx, jndx, kndx;
 
 /*
- * Reset rc4 state. 
+ * Reset arc4 stte. 
  */
-void state_0(void)
+void stte_0(void)
 {
-	indx = jndx = 0;
+	indx = jndx = kndx = 0;
 	do {
-		state[indx] = indx;
+		stte[indx] = indx;
 	} while (++indx);
 }
 
 /*
  * Set key. Can be used more than once. 
  */
-void key(char * str, int len)
+void key(void * str, int len)
 {
 	unsigned char tmp, * ptr = (unsigned char *)str;
 	while (len > 0) {
 		do {
-			tmp = state[indx];
-			jndx += tmp;
-			jndx += ptr[(int)indx % len];
-			state[indx] = state[jndx];
-			state[jndx] = tmp;
+			tmp = stte[indx];
+			kndx += tmp;
+			kndx += ptr[(int)indx % len];
+			stte[indx] = stte[kndx];
+			stte[kndx] = tmp;
 		} while (++indx);
 		ptr += 256;
 		len -= 256;
@@ -565,18 +572,17 @@ void key(char * str, int len)
 /*
  * Crypt data. 
  */
-void rc4(char * str, int len)
+void arc4(void * str, int len)
 {
 	unsigned char tmp, * ptr = (unsigned char *)str;
-	jndx = 0;
 	while (len > 0) {
 		indx++;
-		tmp = state[indx];
+		tmp = stte[indx];
 		jndx += tmp;
-		state[indx] = state[jndx];
-		state[jndx] = tmp;
-		tmp += state[indx];
-		*ptr ^= state[tmp];
+		stte[indx] = stte[jndx];
+		stte[jndx] = tmp;
+		tmp += stte[indx];
+		*ptr ^= stte[tmp];
 		ptr++;
 		len--;
 	}
@@ -603,7 +609,7 @@ int key_with_file(char * file)
 	control->st_size = statf->st_size;
 	control->st_mtime = statf->st_mtime;
 	control->st_ctime = statf->st_ctime;
-	key((char *)control, sizeof(control));
+	key(control, sizeof(control));
 	return 0;
 }
 
@@ -732,95 +738,183 @@ char * read_script(char * file)
 	return text;
 }
 
+unsigned rand_mod(unsigned mod)
+{
+	/* Without skew */
+	unsigned rnd, top = RAND_MAX;
+	top -= top % mod;
+	while (top <= (rnd = rand()))
+		continue;
+	/* Using high-order bits. */
+	rnd = 1.0*mod*rnd/(1.0+top);
+	return rnd;
+}
+
+char rand_chr(void)
+{
+	return (char)rand_mod(1<<(sizeof(char)<<3));
+}
+
 int noise(char * ptr, unsigned min, unsigned xtra, int str)
 {
-	if (xtra) xtra = rand() % xtra;
+	if (xtra) xtra = rand_mod(xtra);
 	xtra += min;
 	for (min = 0; min < xtra; min++, ptr++)
 		do
-			*ptr = (char) rand();
-		while (str && !isalnum(*ptr));
+			*ptr = rand_chr();
+		while (str && !isalnum((int)*ptr));
 	if (str) *ptr = '\0';
 	return xtra;
 }
 
-void print_bytes(FILE * o, char * ptr, int l, int n)
+static int offset;
+
+void prnt_bytes(FILE * o, char * ptr, int m, int l, int n)
 {
 	int i;
 
+	l += m;
+	n += l;
 	for (i = 0; i < n; i++) {
 		if ((i & 0xf) == 0)
 			fprintf(o, "\n\t\"");
-		fprintf(o, "\\%03o", (unsigned char)(i < l ? ptr[i] : rand()));
+		fprintf(o, "\\%03o", (unsigned char)((i>=m) && (i<l) ? ptr[i-m] : rand_chr()));
 		if ((i & 0xf) == 0xf)
 			fprintf(o, "\"");
 	}
 	if ((i & 0xf) != 0)
 		fprintf(o, "\"");
+	offset += n;
 }
 
-void print_array(FILE * o, char * ptr, char * name, int l)
+void prnt_array(FILE * o, void * ptr, char * name, int l, char * cast)
 {
-	fprintf(o, "typedef char %s_t[%d];\n", name, l);
-	fprintf(o, "static  char %s[] = ", name);
-	print_bytes(o, ptr, l, l + (rand() & 0xf));
-	fprintf(o, ";\n");
+	int m = rand_mod(1+l/4);		/* Random amount of random pre  padding (offset) */
+	int n = rand_mod(1+l/4);		/* Random amount of random post padding  (tail)  */
+	int a = (offset+m)%l;
+	if (cast && a) m += l - a;		/* Type alignement. */
+	fprintf(o, "\n");
+	fprintf(o, "#define      %s_z	%d", name, l);
+	fprintf(o, "\n");
+	fprintf(o, "#define      %s	(%s(&data[%d]))", name, cast?cast:"", offset+m);
+	prnt_bytes(o, ptr, m, l, n);
 }
 
-void dump_array(FILE * o, char * ptr, char * name, int l)
+void dump_array(FILE * o, void * ptr, char * name, int l, char * cast)
 {
-	rc4(ptr, l);
-	print_array(o, ptr, name, l);
+	arc4(ptr, l);
+	prnt_array(o, ptr, name, l, cast);
 }
 
 int write_C(char * file, char * argv[])
 {
+	char pswd[256];
+	int pswd_z = sizeof(pswd);
+	char* msg1 = strdup("has expired!\n");
+	int msg1_z = strlen(msg1) + 1;
+	int date_z = sizeof(date);
+	char* kwsh = strdup(shll);
+	int shll_z = strlen(shll) + 1;
+	int inlo_z = strlen(inlo) + 1;
+	int xecc_z = strlen(xecc) + 1;
+	int lsto_z = strlen(lsto) + 1;
+	char* tst1 = strdup("location has changed!");
+	int tst1_z = strlen(tst1) + 1;
+	char* chk1 = strdup(tst1);
+	int chk1_z = tst1_z;
+	char* msg2 = strdup("abnormal behavior!");
+	int msg2_z = strlen(msg2) + 1;
+	int rlax_z = sizeof(rlax);
+	int opts_z = strlen(opts) + 1;
+	int text_z = strlen(text) + 1;
+	char* tst2 = strdup("shell has changed!");
+	int tst2_z = strlen(tst2) + 1;
+	char* chk2 = strdup(tst2);
+	int chk2_z = tst2_z;
+	char* name = strdup(file);
 	FILE * o;
-	char buf[SIZE];
-	int l;
+	int indx;
+	int numd = 0;
+	int done = 0;
 
-	sprintf(buf, "%s.x.c", file);
-	o = fopen(buf, "w");
-	if (!o)
-		return -1;
-	srand((unsigned)time(NULL));
-	fprintf(o, "#if 0\n");
-	fprintf(o, "\t%s %s, %s\n", my_name, version, subject);
-	fprintf(o, "\t%s %s %s %s\n\n\t", cpright, author.f, author.s, author.e);
-	for (l = 0; argv[l]; l++)
-		fprintf(o, "%s ", argv[l]);
-	fprintf(o, "\n#endif\n\n");
-	fprintf(o, "static  long date = %ld;\n", date);
-	fprintf(o, "static  char mail[] = \"%s\";\n", mail);
-	fprintf(o, "static  int  relax = %d;\n", relax);
-	l = noise(buf, 256, 256, 0);
-	dump_array(o, buf, "pswd", l);
-	state_0();
-	key(buf, l);
-	dump_array(o, strdup(shll), "shll", strlen(shll) + 1);
-	dump_array(o, inlo, "inlo", strlen(inlo) + 1);
-	dump_array(o, xecc, "xecc", strlen(xecc) + 1);
-	dump_array(o, lsto, "lsto", strlen(lsto) + 1);
-	l = noise(buf, 8, 8, 1);
-	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk1", buf);
-	dump_array(o, buf, "chk1", l + 1);
-	if (!relax && key_with_file(shll)) {
-		fprintf(stderr, "%s: invalid file name: %s", my_name, shll);
+	/* Encrypt */
+	srand((unsigned)time(NULL)^(unsigned)getpid());
+	pswd_z = noise(pswd, pswd_z, 0, 0); numd++;
+	stte_0();
+	 key(pswd, pswd_z);
+	msg1_z += strlen(mail);
+	msg1 = strcat(realloc(msg1, msg1_z), mail);
+	arc4(msg1, msg1_z); numd++;
+	arc4(date, date_z); numd++;
+	arc4(shll, shll_z); numd++;
+	arc4(inlo, inlo_z); numd++;
+	arc4(xecc, xecc_z); numd++;
+	arc4(lsto, lsto_z); numd++;
+	arc4(tst1, tst1_z); numd++;
+	 key(chk1, chk1_z);
+	arc4(chk1, chk1_z); numd++;
+	arc4(msg2, msg2_z); numd++;
+	indx = !rlax[0];
+	arc4(rlax, rlax_z); numd++;
+	if (indx && key_with_file(kwsh)) {
+		fprintf(stderr, "%s: invalid file name: %s", my_name, kwsh);
 		perror("");
 		exit(1);
 	}
-	dump_array(o, opts, "opts", strlen(opts) + 1);
-	dump_array(o, text, "text", strlen(text) + 1);
-	l = noise(buf, 8, 8, 1);
-	fprintf(o, "#define TEXT_%s	\"%s\"\n", "chk2", buf);
-	dump_array(o, buf, "chk2", l + 1);
-	fprintf(o, "typedef char %s_t[%d];\n\n", "hide", 1<<12);
+	arc4(opts, opts_z); numd++;
+	arc4(text, text_z); numd++;
+	arc4(tst2, tst2_z); numd++;
+	 key(chk2, chk2_z);
+	arc4(chk2, chk2_z); numd++;
+
+	/* Output */
+	name = strcat(realloc(name, strlen(name)+5), ".x.c");
+	o = fopen(name, "w");
+	if (!o) {
+		fprintf(stderr, "%s: creating output file: %s", my_name, name);
+		perror("");
+		exit(1);
+	}
+	fprintf(o, "#if 0\n");
+	fprintf(o, "\t%s %s, %s\n", my_name, version, subject);
+	fprintf(o, "\t%s %s %s %s\n\n\t", cpright, author.f, author.s, author.e);
+	for (indx = 0; argv[indx]; indx++)
+		fprintf(o, "%s ", argv[indx]);
+	fprintf(o, "\n#endif\n\n");
+	fprintf(o, "static  char data [] = ");
+	do {
+		done = 0;
+		indx = rand_mod(15);
+		do {
+			switch (indx) {
+			case  0: if (pswd_z>=0) {prnt_array(o, pswd, "pswd", pswd_z, 0); pswd_z=done=-1; break;}
+			case  1: if (msg1_z>=0) {prnt_array(o, msg1, "msg1", msg1_z, 0); msg1_z=done=-1; break;}
+			case  2: if (date_z>=0) {prnt_array(o, date, "date", date_z, "(double*)"); date_z=done=-1; break;}
+			case  3: if (shll_z>=0) {prnt_array(o, shll, "shll", shll_z, 0); shll_z=done=-1; break;}
+			case  4: if (inlo_z>=0) {prnt_array(o, inlo, "inlo", inlo_z, 0); inlo_z=done=-1; break;}
+			case  5: if (xecc_z>=0) {prnt_array(o, xecc, "xecc", xecc_z, 0); xecc_z=done=-1; break;}
+			case  6: if (lsto_z>=0) {prnt_array(o, lsto, "lsto", lsto_z, 0); lsto_z=done=-1; break;}
+			case  7: if (tst1_z>=0) {prnt_array(o, tst1, "tst1", tst1_z, 0); tst1_z=done=-1; break;}
+			case  8: if (chk1_z>=0) {prnt_array(o, chk1, "chk1", chk1_z, 0); chk1_z=done=-1; break;}
+			case  9: if (msg2_z>=0) {prnt_array(o, msg2, "msg2", msg2_z, 0); msg2_z=done=-1; break;}
+			case 10: if (rlax_z>=0) {prnt_array(o, rlax, "rlax", rlax_z, 0); rlax_z=done=-1; break;}
+			case 11: if (opts_z>=0) {prnt_array(o, opts, "opts", opts_z, 0); opts_z=done=-1; break;}
+			case 12: if (text_z>=0) {prnt_array(o, text, "text", text_z, 0); text_z=done=-1; break;}
+			case 13: if (tst2_z>=0) {prnt_array(o, tst2, "tst2", tst2_z, 0); tst2_z=done=-1; break;}
+			case 14: if (chk2_z>=0) {prnt_array(o, chk2, "chk2", chk2_z, 0); chk2_z=done=-1; break;}
+			}
+			indx = 0;
+		} while (!done);
+	} while (numd+=done);
+	fprintf(o, "/* End of data[] */;\n");
+	fprintf(o, "#define      %s_z	%d\n", "hide", 1<<12);
 	fprintf(o, DEBUGEXEC_line, DEBUGEXEC_flag);
 	fprintf(o, TRACEABLE_line, TRACEABLE_flag);
-	for (l = 0; RTC[l]; l++)
-		fprintf(o, "%s\n", RTC[l]);
+	for (indx = 0; RTC[indx]; indx++)
+		fprintf(o, "%s\n", RTC[indx]);
 	fflush(o);
 	fclose(o);
+
 	return 0;
 }
 
@@ -843,6 +937,10 @@ int make(void)
 	if (verbose) fprintf(stderr, "%s: %s\n", my_name, cmd);
 	if (system(cmd))
 		fprintf(stderr, "%s: never mind\n", my_name);
+	sprintf(cmd, "chmod go-r %s.x", file);
+	if (verbose) fprintf(stderr, "%s: %s\n", my_name, cmd);
+	if (system(cmd))
+		fprintf(stderr, "%s: remove read permission\n", my_name);
 
 	return 0;
 }

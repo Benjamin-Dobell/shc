@@ -26,7 +26,7 @@ SHELL = /bin/sh
 all: shc ask_for_test
 
 shc: shc.c
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $@.c -o $@
 
 ask_for_test:
 	@echo '***	¿Do you want to probe shc with a test script?'
@@ -39,12 +39,9 @@ make_the_test: match.x
 	@echo '***	It must show files with substring "sh" in your PATH...'
 	./match.x sh
 
-match.x: match.x.c
-	$(CC) $(CFLAGS) $< -o $@
-
-match.x.c: shc match
+match.x: shc match
 	@echo '***	Compiling script "match"'
-	CFLAGS="$(CFLAGS)" ./shc -v -r -f match
+	CFLAGS="$(CFLAGS)" ./shc -v -f match
 
 ask_for_strings:
 	@echo '***	¿Do you want to see strings in the generated binary?'
@@ -53,9 +50,9 @@ ask_for_strings:
 strings: make_the_strings ask_for_install
 
 make_the_strings: match.x
-	@echo '***	Running: "strings -n 5 '$<'"'
+	@echo '***	Running: "strings -n 5 'match.x'"'
 	@echo '***	It must show no sensible information...'
-	strings -n 5 $<
+	strings -n 5 match.x
 
 ask_for_install:
 	@echo '***	¿Do you want to install shc?'
