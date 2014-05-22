@@ -1,7 +1,7 @@
 #! /bin/ash -x
 echo "$0" "$@"
 ps $$
-ps wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww  $$
+ps wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww  $$
 cat /proc/$$/cmdline
 touch $0.kk
-echo " ---"
+read ENTER

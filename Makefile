@@ -1,6 +1,9 @@
 # Makefile
 #
 
+# For SCO
+CFLAGS = -b elf -O -D_SVID
+
 # For IRIX
 CFLAGS = -xansi -fullwarn -O3 -g0
 

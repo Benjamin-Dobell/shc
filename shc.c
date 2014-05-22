@@ -7,10 +7,10 @@
  * The copyright notice does not apply to that code.
  */
 static const char * my_name = "shc";
-static const char * version = "Version 3.2";
+static const char * version = "Version 3.3";
 static const char * subject = "Generic Script Compiler";
-static const char * cpright =
-"Copyright (c) 1994..1999... Francisco Rosales <frosal@fi.upm.es>";
+static const char * cpright = "Copyright (c) 1994..2002...";
+static const char * authorm = "Francisco Rosales <frosal@fi.upm.es>";
 
 static const char * copying =
 "Copying:\n"
@@ -229,6 +229,7 @@ static const char * RTC =
 "\n"
 "#ifdef DEBUGEXEC\n"
 "#define DEBUGEXEC	/* Define if you want to debug execvp calls */\n"
+"\n"
 "void debugexec(char * shll, char ** argv)\n"
 "{\n"
 "	int i;\n"
@@ -237,7 +238,39 @@ static const char * RTC =
 "		fprintf(stderr, \"argv[%d]=%.60s\\n\", i, argv[i]);\n"
 "	}\n"
 "}\n"
-"#endif\n"
+"\n"
+"#endif /* DEBUGEXEC */\n"
+"\n"
+"#define UNTRACEABLE	/* Define to prevent ptrace this executable */\n"
+"#ifdef UNTRACEABLE\n"
+"\n"
+"#include <sys/ptrace.h>\n"
+"#include <sys/types.h>\n"
+"#include <sys/wait.h>\n"
+"#include <signal.h>\n"
+"#include <stdio.h>\n"
+"#include <unistd.h>\n"
+"\n"
+"void untraceable(char * argv0)\n"
+"{\n"
+"	int pid;\n"
+"\n"
+"	switch(pid = vfork()) {\n"
+"	case  0:\n"
+"		pid = getppid();\n"
+"		if (!ptrace(PTRACE_ATTACH, pid, 0, 0) && !kill(pid, SIGCONT))\n"
+"			_exit(0);\n"
+"		kill(pid, SIGKILL);\n"
+"	case -1:\n"
+"		break;\n"
+"	default:\n"
+"		if (pid == waitpid(pid, 0, 0))\n"
+"			return;\n"
+"	}\n"
+"	perror(argv0);\n"
+"	_exit(1);\n"
+"}\n"
+"#endif	/* UNTRACEABLE */\n"
 "\n"
 "void xsh(int argc, char ** argv)\n"
 "{\n"
@@ -311,6 +344,9 @@ static const char * RTC =
 "#ifdef DEBUGEXEC\n"
 "	debugexec(\"main\", argv);\n"
 "#endif\n"
+"#ifdef UNTRACEABLE\n"
+"	untraceable(argv[0]);\n"
+"#endif\n"
 "	if (date && (date < (long)time(NULL))) {\n"
 "		fprintf(stderr, \"%s\\n\", stmp);\n"
 "		fprintf(stderr, \"%s: Out of date\\n\", argv[0]);\n"
@@ -337,8 +373,6 @@ static const char * RTC =
 static void error(const char * type, const char * frm, ...)
 {
 	va_list ap;
-	extern int errno;
-//	extern char * sys_errlist[];
 	char * frm2 = "\n";
 
 	va_start(ap, frm);
@@ -351,7 +385,7 @@ static void error(const char * type, const char * frm, ...)
 
 	fprintf(stderr, "%s", my_name);
 	vfprintf(stderr, frm, ap);
-	fprintf(stderr, frm2, sys_errlist[errno]);
+	fprintf(stderr, frm2, strerror(errno));
 
 	if (strchr(type, 'x'))
 		exit(1);
@@ -410,18 +444,21 @@ static int parse_an_arg(int argc, char * argv[])
 	case 'C':
 		error("", " %s, %s", version, subject);
 		error("", " %s", cpright);
+		error("", " %s", authorm);
 		error("", " %s", copying);
 		exit(0);
 		break;
 	case 'A':
 		error("", " %s, %s", version, subject);
 		error("", " %s", cpright);
+		error("", " %s", authorm);
 		error("", " %s", abstract);
 		exit(0);
 		break;
 	case 'h':
 		error("", " %s, %s", version, subject);
 		error("", " %s", cpright);
+		error("", " %s", authorm);
 		error("", " %s%s", usage, help);
 		exit(0);
 		break;
@@ -715,11 +752,11 @@ int write_C(char * file)
 		return -1;
 	srand((unsigned)time(NULL));
 	fprintf(o, "/* %s */\n\n", buf);
-	fprintf(o, "static char stmp[] = \"%s %s, %s\\n\"\n\"%s\";\n",
-		my_name, version, subject, cpright);
+	fprintf(o, "static char stmp[] = \"%s %s, %s\\n\"\n\"%s %s\";\n",
+		my_name, version, subject, cpright, authorm);
 	fprintf(o, "static long date = %ld;\n", date);
 	fprintf(o, "static char mail[] = \"%s\";\n", mail);
-	fprintf(o, "static int relax= %d;\n", relax);
+	fprintf(o, "static int relax = %d;\n", relax);
 	l = noise(buf, 256, 256);
 	dump_data(o, buf, "pswd", l);
 	state_0();

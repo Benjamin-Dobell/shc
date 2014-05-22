@@ -1,5 +1,9 @@
 CHANGES
 
+3.3	Thu Jan 24 21:27:07 CET 2002
+
+	Prevent to ptrace the process.
+
 3.2	Tue Mar  9 19:03:54 CET 1999
 
 	Find ancient pclose that must be fclose.
